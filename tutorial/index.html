@@ -1,0 +1,313 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<html>
+	<head>
+	    <title>Play API REST [Play 2.4 - Scala]</title>
+	</head>
+	<body>
+		<div>
+	    <h2>Play API REST Template</h2>
+	    <p>
+				Template to show how to implement an API using Play Framework. 
+			</p>
+			<p>
+				<strong>There is another companion project to test this template <a href="https://github.com/adrianhurt/play-api-rest-tester" target="_blank">here</a>.</strong>
+			</p>
+			<p>
+				The characteristics and objectives of this template are:
+			</p>
+			<ul>
+				<li>RESTful.</li>
+				<li>JSON: for request and response bodies.</li>
+				<li>Assumes SSL everywhere (SSL is not covered in this template).</li>
+				<li>Use of Authentication Token to sign in.</li>
+				<li>As much standard as possible.</li>
+				<li>Allow pagination.</li>
+				<li>Allow filtering, sorting and searching.</li>
+				<li>Priorize the simplicity for creating new actions and controllers.</li>
+				<li>Allow enveloping for those API clients those haven't access to HTTP Headers.</li>
+			</ul>
+			<p>
+				What this template does NOT explain:
+			</p>
+			<ul>
+				<li>SSL: you can configure Play to do that. Or better, configure your web server.</li>
+				<li>Security Issues like password storing.</li>
+				<li>ETag, Last-Modified.</li>
+				<li>GZIP.</li>
+				<li>DB storage.</li>
+			</ul>
+			<p>
+				Please, <strong>read this</strong> interesting post:
+				<a href="http://www.vinaysahni.com/best-practices-for-a-pragmatic-restful-api" target="_blank">Best Practices for Designing a Pragmatic RESTful API</a>
+				(also <a href="http://elbauldelprogramador.com/buenas-practicas-para-el-diseno-de-una-api-restful-pragmatica/" target="_blank">in Spanish</a>).
+			</p>
+			<p>
+				First of all, this is a template, not a library. It simply tries to give you some clues to develop your own API. So copy the files you need, adapt them to your code and play with it.
+			</p>
+			<p>
+				And please, don't forget starring this project if you consider it has been useful for you.
+	    </p>
+		</div>
+		
+		<div>
+			<h2>Basic structure</h2>
+			<p>
+				It's simple. In Play you have the classes <code>Controller</code>, <code>Action[A]</code>, <code>Request[A]</code> and <code>Result</code>. With this template we have their equivalences:
+			</p>
+			<ul>
+				<li><code>Controller</code> -> <a href="#code/app/api/ApiController.scala" class="shortcut"><code>ApiController</code></a></li>
+				<li><code>Action[A]</code> -> <a href="#code/app/api/ApiController.scala" class="shortcut"><code>GetAction</code>, <code>PostAction</code>, <code>SecuredGetAction</code>, <code>SecuredPostAction</code>, ... and more</a>.</li>
+				<li><code>Request[A]</code> -> <a href="#code/app/api/ApiRequest.scala" class="shortcut"><code>ApiRequest[A]</code> and <code>SecuredApiRequest[A]</code></a></li>
+				<li><code>Result</code> -> <a href="#code/app/api/ApiResponse.scala" class="shortcut"><code>ApiResponse</code></a> and <a href="#code/app/api/ApiError.scala" class="shortcut"><code>ApiError</code></a>, both extending the trait <a href="#code/app/api/ApiResult.scala" class="shortcut"><code>ApiResult</code></a>.</li>
+			</ul>
+		</div>
+		<div>
+			<h2>Api</h2>
+			<p>
+				<a href="#code/app/api/Api.scala" class="shortcut"><code>Api</code></a> is an object that contains common values and methods.
+			</p>
+		</div>
+		
+		<div>
+			<h2>ApiRequest[A] and SecuredApiRequest[A]</h2>
+			<p>
+				Every request should have the following headers:
+			</p>
+			<ul>
+				<li><strong>Content-Type</strong>: application/json</li>
+				<li><strong>Date</strong>: with format <em>"E, dd MMM yyyy HH:mm:ss 'GMT'"</em></li>
+				<li><strong>X-Api-Key</strong>: with the corresponding Api Key</li>
+				<li><strong>X-Auth-Token</strong>: with the corresponding Auth Token (only for <strong>secured requests</strong>)</li>
+				<li><strong>Accept-Language</strong>: with the desired language (optional)</li>
+			</ul>
+			<p>
+				<a href="#code/app/api/ApiRequest.scala" class="shortcut"><code>ApiRequest[A]</code></a> it's a simple <code>RequestWrapper[A]</code> with several additional values:
+			</p>
+			<ul>
+				<li><code>apiKeyOpt: Option[String]</code>: with the Api Key taken from the <code>X-Api-Key</code> header.</li>
+				<li><code>dateOpt: Option[DateTime]</code>: with the date taken from the header.</li>
+				<li><code>tokenOpt: Option[String]</code>: with the Auth Token taken from the <code>X-Auth-Token</code> header.</li>
+			</ul>
+			<p>
+				<a href="#code/app/api/ApiRequest.scala" class="shortcut"><code>SecuredApiRequest[A]</code></a> extends from <code>ApiRequest[A]</code> and it's used for secured requests where the user must be signed in. 
+			</p>
+			<ul>
+				<li><code>apiKey: String</code></li>
+				<li><code>date: DateTime</code></li>
+				<li><code>token: String</code></li>
+				<li><code>userId: Long</code>: with the id of the signed user.</li>
+			</ul>
+		</div>
+		
+		<div>
+			<h2>ApiResult</h2>
+			<p>
+				<a href="#code/app/api/ApiResult.scala" class="shortcut"><code>ApiResult</code></a> is a trait that stores the information required to create a <code>Result</code>. It stores the Status Code, the JSON value and the headers for the response.
+			</p>
+		</div>
+		<div>
+			<h2>ApiResponse</h2>
+			<p>
+				<a href="#code/app/api/ApiResponse.scala" class="shortcut"><code>ApiResponse</code></a> extends from <a href="#code/app/api/ApiResult.scala" class="shortcut"><code>ApiResult</code></a> and it represents a successful response for the request. The available Status Codes are: <code>STATUS_OK</code>, <code>STATUS_CREATED</code>, <code>STATUS_ACCEPTED</code> and <code>STATUS_NOCONTENT</code>. And it provides the following factory methods:
+			<ul>
+				<li><code>ok(json: JsValue, headers: (String, String)*)</code></li>
+				<li><code>ok[A](json: JsValue, page: Page[A], headers: (String, String)*)</code></li>
+				<li><code>created(json: JsValue, headers: (String, String)*)</code></li>
+				<li><code>accepted(json: JsValue, headers: (String, String)*)</code></li>
+				<li><code>noContent(headers: (String, String)*)</code></li>
+			</ul>
+		</div>
+		<div>
+			<h2>ApiError</h2>
+			<p>
+				<a href="#code/app/api/ApiError.scala" class="shortcut"><code>ApiError</code></a> extends from <a href="#code/app/api/ApiResult.scala" class="shortcut"><code>ApiResult</code></a> and it represents an error response for the request. It stores a specific error code, a descriptive message and an optional additional object with more information. The JSON structure is the like the following:
+			</p>
+<pre><code>{ code: 400, msg: "Bad Request" }</pre></code>
+			<p>
+				or
+			</p>
+<pre><code>{ code: 125, msg: "Malformed body", info: "additional information about the error" }</pre></code>
+			<p>
+				The available Status Codes are: <code>STATUS_BADREQUEST</code>, <code>STATUS_UNAUTHORIZED</code>, <code>STATUS_FORBIDDEN</code>, <code>STATUS_NOTFOUND</code> and <code>STATUS_INTERNAL_SERVER</code>. And it provides a list of predefined code errors and their corresponding factory methods.
+			</p>
+		</div>
+		
+		<div>
+			<h2>ApiController</h2>
+			<p>
+				<a href="#code/app/api/ApiController.scala" class="shortcut"><code>ApiController</code></a> is simply a trait that extends from <code>Controller</code> and adds a set of utilities to do the life easier.
+			</p>
+			<h3>Actions</h3>
+			<p>
+				There are a list of useful actions for each request method:
+			</p>
+			<ul>
+				<li><code>GetAction(action: ApiRequest[Unit] => Future[ApiResult])</code></li>
+				<li><code>PostAction(action: ApiRequest[JsValue] => Future[ApiResult])</code></li>
+				<li><code>PutAction(action: ApiRequest[JsValue] => Future[ApiResult])</code></li>
+				<li><code>PatchAction(action: ApiRequest[JsValue] => Future[ApiResult])</code></li>
+				<li><code>DeleteAction(action: ApiRequest[Unit] => Future[ApiResult])</code></li>
+			</ul>
+			<p>
+				And their equivalences for secured requests:
+			</p>
+			<ul>
+				<li><code>SecuredGetAction(action: SecuredApiRequest[Unit] => Future[ApiResult])</code></li>
+				<li><code>SecuredPostAction(action: SecuredApiRequest[JsValue] => Future[ApiResult])</code></li>
+				<li><code>SecuredPutAction(action: SecuredApiRequest[JsValue] => Future[ApiResult])</code></li>
+				<li><code>SecuredPatchAction(action: SecuredApiRequest[JsValue] => Future[ApiResult])</code></li>
+				<li><code>SecuredDeleteAction(action: SecuredApiRequest[Unit] => Future[ApiResult])</code></li>
+			</ul>
+			<h3>Creating <code>ApiResults</code> from writable JSON objects</h3>
+			<p>
+				There are a set of useful methods to create <code>ApiResults</code> from JSON objects:
+			</p>
+			<ul>
+				<li><code>ok[A](obj: A, headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]</code></li>
+				<li><code>ok[A](futObj: Future[A], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]</code></li>
+				<li><code>maybeItem[A](opt: Option[A], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]</code></li>
+				<li><code>maybeItem[A](futOpt: Future[Option[A]], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]</code></li>
+				<li><code>page[A](p: Page[A], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]</code></li>
+				<li><code>page[A](futP: Future[Page[A]], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]</code></li>
+				<li><code>created[A](obj: A, headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]</code></li>
+				<li><code>created[A](futObj: Future[A], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]</code></li>
+				<li><code>accepted[A](obj: A, headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]</code></li>
+				<li><code>accepted[A](futObj: Future[A], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]</code></li>
+				<li><code>noContent(headers: (String, String)*): Future[ApiResult]</code></li>
+			</ul>
+		</div>
+		
+		<div>
+			<h2>Pagination</h2>
+			<p>
+				There is a simple <a href="#code/app/api/Page.scala" class="shortcut"><code>Page[+A]</code></a> class to hold the pagination information:
+			</p>
+<pre><code>case class Page[+A](items: Seq[A], page: Int, size: Int, total: Long) {
+  def offset = (page - 1) * size + 1
+}</pre></code>
+			<p>
+				Then, we need to create a <code>Page</code> class with our list of items and simply call the <code>page()</code> method of <a href="#code/app/api/ApiController.scala" class="shortcut"><code>ApiController</code></a>.
+			</p>
+<pre><code>val itemsPage: Future[Page[Item]] = ...
+itemsPage.map(page(_))</pre></code>
+			<p>
+				or simply:
+			</p>
+<pre><code>page(itemsPage)</pre></code>
+			<p>
+				It will add automatically the following headers to the response:
+			</p>
+			<ul>
+				<li><code>X-Page</code>: current page (int)</li>
+				<li><code>X-Page-From</code>: the position of the first item of this page within the total of items (int)</li>
+				<li><code>X-Page-Size</code>: number of items for each page (int)</li>
+				<li><code>X-Page-Total</code>: total number of items (int)</li>
+			</ul>
+		</div>
+		
+		<div>
+			<h2>Filtering, searching and sorting</h2>
+			<p>
+				Filtering and searching are very straightforward. Imagine you have an action to list the tasks in a TO-DO list. If you would like to add the ability to filter those that are done or not, or to seach for a specific query term, you only have to add this parameters and handle them to implement them within your search engine.
+			</p>
+<pre><code>/tasks?q=blah&done=true
+# Route
+GET    /tasks  controllers.Tasks.list(q: Option[String], done: Option[Boolean])</pre></code>
+			<p>
+				However, sorting is trickier. Let's see this example:
+			</p>
+<pre><code>/tasks?sort=-deadline,-date,order
+# Route
+GET    /tasks  controllers.Tasks.list(sort: Option[String])</pre></code>
+			<p>
+				The <code>sort</code> parameter have a comma separated list of signed fields, ordered by priority. So for the example, you would like to order by deadline in descendent order, then by date in descendent order, and finally by the task's order within the list in ascendent order. To make it a bit easier, <a href="#code/app/api/ApiController.scala" class="shortcut"><code>ApiController</code></a> defines the following method
+			</p>
+<pre><code>processSortByParam(sortBy: Option[String], allowedFields: Seq[String], default: String): Either[ApiError, Seq[(String, Boolean)]]</pre></code>
+			<p>
+				It takes the <code>sort</code> parameter, a list of available allowed fields to sort by, and a default sorting string. Then it returns a list of pairs <code>(String, Boolean)</code> with the corresponding field and order (true if it's descendent), or an <a href="#code/app/api/ApiError.scala" class="shortcut"><code>ApiError</code></a> if any of the field is not allowed.
+			</p>
+			<p>
+				Then, you can implement the sorting as you want from this <code>Seq[(field, order)]</code>, depending on your DB storage.
+			</p>
+		</div>
+		
+		<div>
+			<h2>Envelope</h2>
+			<p>
+				There are cases where an API client can't access to the HTTP Headers. For that cases you can add the parameter <code>envelope=true</code> to the query and it will encapsulate the data information and the headers within a JSON object like that:
+			</p>
+<pre><code>{ data: your-json-response, status: status-code, headers: { header1: value1, header2: value2, … } }</pre></code>
+		</div>
+		
+		<div>
+			<h2>How to use it: a simple TODO list example</h2>
+			<p>
+				This template has implemented a basic TODO example, so you can check it. But here let's see some examples.
+			</p>
+			<p>
+				Your controllers should extend <a href="#code/app/api/ApiController.scala" class="shortcut"><code>ApiController</code></a> and <code>I18nSupport</code>.
+			</p>
+<pre><code>class Tasks @Inject() (val messagesApi: MessagesApi) extends api.ApiController with I18nSupport { … }</pre></code>
+			<p>
+				To list the tasks and allow searching, filtering, sorting and pagination:
+			</p>
+<pre><code>def list(folderId: Long, q: Option[String], done: Option[Boolean], sort: Option[String], p: Int, s: Int) = SecuredGetAction { implicit request =>
+  sortedPage(sort, Task.sortingFields, default = "order") { sortingFields =>
+    Task.page(folderId, q, done, sortingFields, p, s)
+  }
+}</pre></code>
+			<p>
+				Where <code>Task.page(…)</code> implements the functionality to return a <code>Page[Task]</code> with the corresponding tasks applying this parameters.
+			</p>
+			<p>
+				To insert new items, there is another method in <a href="#code/app/api/ApiController.scala" class="shortcut"><code>ApiController</code></a> that reads a writable object and returns an <a href="#code/app/api/ApiError.scala" class="shortcut"><code>ApiError</code></a> if needed.
+			</p>
+<pre><code>def insert(folderId: Long) = SecuredPostAction { implicit request =>
+  readFromRequest[Task] { task =>
+    Task.insert(folderId, task.text, new Date(), task.deadline).flatMap {
+      case (id, newTask) => ok(newTask)
+    }
+  }
+}</pre></code>
+			<p>
+				To return a single item, update it and delete it:
+			</p>
+<pre><code>def info(id: Long) = SecuredGetAction { implicit request =>
+  maybeItem(Task.findById(id))
+ }
+def update(id: Long) = SecuredPutAction { implicit request =>
+  readFromRequest[Task] { task =>
+    Task.basicUpdate(id, task.text, task.deadline).flatMap { isOk =>
+      if (isOk) noContent() else errorInternal
+    }
+  }
+}
+def delete(id: Long) = SecuredDeleteAction { implicit request =>
+  Task.delete(id).flatMap { _ =>
+    noContent()
+  }
+}</pre></code>
+			<p>
+				The authorization based on the Auth Token is done within the <code>Auth</code> controller. It handles the sign in and sign out actions to handle the tokens, and sign up one to register a new user.
+			</p>
+		</div>
+		
+		<div>
+			<h2>FakeDB</h2>
+			<p>
+				For the example, a <a href="#code/app/models/FakeDB.scala" class="shortcut">fake DB</a> is implemented. The implementation is not relevant, but you can check all the information within the DB in your browser at:
+			</p>
+<pre><code>/fakeDB</code></pre>
+			<p>
+				That will let you check what's happening while you're testing with the <a href="https://github.com/adrianhurt/play-api-rest-tester" target="_blank">tester</a>.
+			</p>
+		</div>
+		
+		<div>
+			<h2>Test Units</h2>
+			<p>
+				Although there is a companion <a href="https://github.com/adrianhurt/play-api-rest-tester" target="_blank">tester project</a>, don't forget to use unit testing for production. You can see some examples in this template.
+			</p>
+		</div>
+	</body>
+</html>

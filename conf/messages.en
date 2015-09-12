@@ -1,0 +1,34 @@
+################################################################################################
+# Errors
+
+api.error.badrequest=Bad Request: {0}
+api.error.unauthorized=Unauthorized Request
+api.error.forbidden=Forbidden Request
+api.error.notfound=Not Found
+api.error.internal=Internal Error
+
+api.error.apikey.notfound=Api Key header not found
+api.error.apikey.unknown=Unknown Api Key
+api.error.apikey.disabled=Disabled Api Key
+api.error.date.notfound=Date header not found
+api.error.date.malformed=Malformed Date header
+api.error.token.notfound=Auth Token header not found
+api.error.token.unknown=Unknown Auth Token
+api.error.token.expired=Auth Token has expired
+api.error.user.notfound=User not found
+api.error.user.email.unconfirmed=The user's email is not yet confirmed
+api.error.user.inactive=User is inactive
+
+api.error.param.malformed=Malformed param: {0}
+api.error.header.notfound=Header not found: {0}
+api.error.header.malformed=Malformed header: {0}
+api.error.body.missed=The request needs a body
+api.error.body.malformed=Malformed body
+api.error.item.notfound=Item not found
+
+
+################################################################################################
+# Custom errors
+
+api.error.signup.email.exists=The email is caught by another user
+api.error.reset.pwd.old.incorrect=The old password is incorrect

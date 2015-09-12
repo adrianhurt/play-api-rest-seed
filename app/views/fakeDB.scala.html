@@ -1,0 +1,324 @@
+@()
+@displayDate(date: java.util.Date)(implicit dateFormat: java.text.SimpleDateFormat) = @{ dateFormat.format(date) }
+@displayDateTwoLines(date: java.util.Date)(implicit dateFormat: java.text.SimpleDateFormat) = @{ Html(dateFormat.format(date).replace(" ", "<br>")) }
+@defining(new java.text.SimpleDateFormat("dd-MM-yyyy HH:ss:mm")) { implicit dateFormat =>
+	@main("Fake DB") {
+		<style>
+		body { padding-top: 70px; background-color: #fbfcfe; }
+		.navbar-default { background-color: #3264c8; }
+		.navbar-default a { color: white !important; }
+		.navbar-brand { margin: 0 0 0 20px; font-size: 2em; font-weight: bold; cursor: default; }
+		.navbar-brand small { margin-left: 10px; font-weight: normal; font-style: italic; }
+		#github-buttons { margin-top: 15px; }
+		h1 { margin-top: -40px; padding-top: 70px; font-size: 24px; color: #3264c8; }
+		.table-striped { background-color: #f0f0ff; }
+		.table-striped>tbody>tr:nth-of-type(odd) { background-color: #f0f0ff; }
+		th, .no-items { text-align: center; }
+		td { vertical-align: middle !important; }
+		</style>
+	} {
+		<nav class="navbar navbar-default navbar-fixed-top">
+		  <div class="container">
+		    <div class="navbar-header">
+		      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-1">
+		        <span class="sr-only">Toggle navigation</span>
+		        <span class="icon-bar"></span>
+		        <span class="icon-bar"></span>
+		        <span class="icon-bar"></span>
+		      </button>
+		      <a class="navbar-brand">Play-Api-Rest <small>Fake DB</small></a>
+		    </div>
+		    <div class="collapse navbar-collapse" id="navbar-collapse-1">
+		      <ul class="nav navbar-nav">
+		        <li><a href="#summary">Summary</a></li>
+		        <li><a href="#logs">Api Logs</a></li>
+		        <li><a href="#apikeys">Api Keys</a></li>
+		        <li><a href="#tokens">Auth Tokens</a></li>
+		        <li><a href="#users">Users</a></li>
+		        <li><a href="#folders">Folders</a></li>
+		        <li><a href="#tasks">Tasks</a></li>
+		      </ul>
+					<div class="nav navbar-nav navbar-right">
+						<div id="github-buttons">
+							<iframe src="http://ghbtns.com/github-btn.html?user=adrianhurt&repo=play-api-rest-seed&type=watch&count=true"
+								allowtransparency="true" frameborder="0" scrolling="0" width="100" height="20"></iframe>
+							<iframe src="http://ghbtns.com/github-btn.html?user=adrianhurt&repo=play-api-rest-seed&type=fork&count=true"
+								allowtransparency="true" frameborder="0" scrolling="0" width="100" height="20"></iframe>
+						</div>
+					</div>
+		    </div>
+		  </div>
+		</nav>
+		
+		
+		<h1 id="summary">Summary Table</h1>
+
+		<table class="table table-bordered table-striped table-condensed">
+			<thead class="text-center">
+				<tr>
+					<th colspan="6">Users</th>
+					<th colspan="3">Folders</th>
+					<th colspan="5">Tasks</th>
+				</tr>
+				<tr>
+					<th>Id</th>
+					<th>Email</th>
+					<th>Password</th>
+					<th>Name</th>
+					<th><abbr title="Email confirmed">@@</abbr></th>
+					<th><abbr title="Is active">Act.</abbr></th>
+					<th><abbr title="Order"><span class="glyphicon glyphicon-sort-by-order"></span></abbr></th>
+					<th>Id</th>
+					<th>Name</th>
+					<th><abbr title="Order"><span class="glyphicon glyphicon-sort-by-order"></span></abbr></th>
+					<th>Id</th>
+					<th>Text</th>
+					<th>Deadline</th>
+					<th>Done</th>
+				</tr>
+			</thead>
+			<tbody>
+				@if(!FakeDB.users.isEmpty) {
+					@FakeDB.users.values.sortBy(_.id).map { user =>
+						@defining(FakeDB.folders.filter(_.userId == user.id).sortBy(_.order)) { folderList =>
+							@defining(folderList.map(f => FakeDB.tasks.count(_.folderId == f.id)).sum) { numTasksForUser =>
+								<tr>
+									<td rowspan="@numTasksForUser" class="text-center">@user.id</td>
+									<td rowspan="@numTasksForUser">@user.email</td>
+									<td rowspan="@numTasksForUser">@user.password</td>
+									<td rowspan="@numTasksForUser">@user.name</td>
+									<td rowspan="@numTasksForUser" class="text-center">@if(user.emailConfirmed){<span class="glyphicon glyphicon-ok-sign text-success"></span>}else{<span class="glyphicon glyphicon-exclamation-sign text-warning"></span>}</td>
+									<td rowspan="@numTasksForUser" class="text-center">@if(user.active){<span class="glyphicon glyphicon-ok text-success"></span>}else{<span class="glyphicon glyphicon-remove text-danger"></span>}</td>
+									@if(!folderList.isEmpty) {
+										@folderList.map { folder =>
+											@defining(FakeDB.tasks.filter(_.folderId == folder.id).sortBy(_.order)) { taskList =>
+												@defining(taskList.size) { numTasksForFolder =>
+													<td rowspan="@numTasksForFolder" class="text-center">@folder.order</td>
+													<td rowspan="@numTasksForFolder" class="text-center">@folder.id</td>
+													<td rowspan="@numTasksForFolder">@folder.name</td>
+													@if(!taskList.isEmpty) {
+														@taskList.map { task =>
+															<td class="text-center">@task.order</td>
+															<td class="text-center">@task.id</td>
+															<td>@task.text</td>
+															<td class="text-center">@task.deadline.map(displayDateTwoLines)</td>
+															<td class="text-center">@if(task.done){<span class="glyphicon glyphicon-ok"></span>}</td>
+															</tr></tr>
+														}
+													} else {
+														<td colspan="50" class="no-items">Without tasks</td>
+													}
+													</tr></tr>
+												}
+											}
+										}
+									} else {
+										<td colspan="50" class="no-items">Without folders</td>
+									}
+								</tr>
+							}
+						}
+					}
+				} else {
+					<tr><td colspan="50" class="no-items">There is no user</td></tr>
+				}
+			</tbody>
+		</table>
+		
+		
+		<h1 id="logs">Logs</h1>
+		
+		<table class="table table-bordered table-striped table-condensed">
+			<thead class="text-center">
+				<tr>
+					<th colspan="1"></th>
+					<th colspan="7">Request</th>
+					<th colspan="2">Response</th>
+				</tr>
+				<tr>
+					<th>#</th>
+					<th>Date</th>
+					<th>IP</th>
+					<th>Api Key</th>
+					<th>Token</th>
+					<th>Method</th>
+					<th>URI</th>
+					<th>Body</th>
+					<th>Status</th>
+					<th>Body</th>
+				</tr>
+			</thead>
+			<tbody>
+				@if(!FakeDB.logs.isEmpty) {
+					@FakeDB.logs.map { log =>
+						<tr>
+							<td>@log.id</td>
+							<td>@log.dateStr</td>
+							<td>@log.ip</td>
+							<td>@log.apiKey</td>
+							<td>@log.token</td>
+							<td>@log.method</td>
+							<td>@log.uri</td>
+							<td>@log.requestBody</td>
+							<td>@log.responseStatus</td>
+							<td>@log.responseBody</td>
+						</tr>
+					}
+				} else {
+					<tr>
+						<td colspan="10" class="no-items">There is no log</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+		
+		
+		
+		<h1 id="apikeys">Api Keys</h1>
+
+		<table class="table table-bordered table-striped table-condensed">
+			<thead class="text-center">
+				<tr>
+					<th>Api Key</th>
+					<th>Name</th>
+					<th><abbr title="Is active">Act.</abbr></th>
+				</tr>
+			</thead>
+			<tbody>
+				@if(!FakeDB.apiKeys.isEmpty) {
+					@FakeDB.apiKeys.values.sortBy(_.apiKey).map { apiKey =>
+						<tr>
+							<td>@apiKey.apiKey</td>
+							<td>@apiKey.name</td>
+							<td class="text-center">@if(apiKey.active){<span class="glyphicon glyphicon-ok text-success"></span>}else{<span class="glyphicon glyphicon-remove text-danger"></span>}</td>
+						</tr>
+					}
+				} else {
+					<tr><td colspan="50" class="no-items">There is no Api Key</td></tr>
+				}
+			</tbody>
+		</table>
+		
+		
+		<h1 id="tokens">Auth Tokens</h1>
+
+		<table class="table table-bordered table-striped table-condensed">
+			<thead class="text-center">
+				<tr>
+					<th>Api Key</th>
+					<th>Token</th>
+					<th class="text-center">User id</th>
+					<th>Expiration date</th>
+				</tr>
+			</thead>
+			<tbody>
+				@if(!FakeDB.tokens.isEmpty) {
+					@FakeDB.tokens.values.sortBy(_.apiKey).map { token =>
+						<tr>
+							<td>@token.apiKey</td>
+							<td>@token.token</td>
+							<td class="text-center">@token.userId</td>
+							<td class="text-center">@displayDate(token.expirationTime.toDate)</td>
+						</tr>
+					}
+				} else {
+					<tr><td colspan="50" class="no-items">There is no Auth Token</td></tr>
+				}
+			</tbody>
+		</table>
+		
+		
+		<h1 id="users">Users</h1>
+
+		<table class="table table-bordered table-striped table-condensed">
+			<thead class="text-center">
+				<tr>
+					<th>Id</th>
+					<th>Email</th>
+					<th>Password</th>
+					<th>Name</th>
+					<th><abbr title="Email confirmed">@@</abbr></th>
+					<th><abbr title="Is active">Act.</abbr></th>
+				</tr>
+			</thead>
+			<tbody>
+				@if(!FakeDB.users.isEmpty) {
+					@FakeDB.users.values.sortBy(_.id).map { user =>
+						<tr>
+							<td class="text-center">@user.id</td>
+							<td>@user.email</td>
+							<td>@user.password</td>
+							<td>@user.name</td>
+							<td class="text-center">@if(user.emailConfirmed){<span class="glyphicon glyphicon-ok-sign text-success"></span>}else{<span class="glyphicon glyphicon-exclamation-sign text-warning"></span>}</td>
+							<td class="text-center">@if(user.active){<span class="glyphicon glyphicon-ok text-success"></span>}else{<span class="glyphicon glyphicon-remove text-danger"></span>}</td>
+						</tr>
+					}
+				} else {
+					<tr><td colspan="50" class="no-items">There is no users</td></tr>
+				}
+			</tbody>
+		</table>
+		
+		
+		<h1 id="folders">Folders</h1>
+
+		<table class="table table-bordered table-striped table-condensed">
+			<thead class="text-center">
+				<tr>
+					<th>Id</th>
+					<th>User id</th>
+					<th><abbr title="Order"><span class="glyphicon glyphicon-sort-by-order"></span></abbr></th>
+					<th>Name</th>
+				</tr>
+			</thead>
+			<tbody>				
+				@if(!FakeDB.folders.isEmpty) {
+					@FakeDB.folders.values.sortBy(_.id).map { folder =>
+						<tr>
+							<td class="text-center">@folder.id</td>
+							<td class="text-center">@folder.userId</td>
+							<td class="text-center">@folder.order</td>
+							<td>@folder.name</td>
+						</tr>
+					}
+				} else {
+					<tr><td colspan="50" class="no-items">There is no folder</td></tr>
+				}
+			</tbody>
+		</table>
+		
+		
+		<h1 id="tasks">Tasks</h1>
+
+		<table class="table table-bordered table-striped table-condensed">
+			<thead class="text-center">
+				<tr>
+					<th>Id</th>
+					<th>Folder id</th>
+					<th><abbr title="Order"><span class="glyphicon glyphicon-sort-by-order"></span></abbr></th>
+					<th>Text</th>
+					<th>Date</th>
+					<th>Deadline</th>
+					<th>Done</th>
+				</tr>
+			</thead>
+			<tbody>				
+				@if(!FakeDB.tasks.isEmpty) {
+					@FakeDB.tasks.values.sortBy(_.id).map { task =>
+						<tr>
+							<td class="text-center">@task.id</td>
+							<td class="text-center">@task.folderId</td>
+							<td class="text-center">@task.order</td>
+							<td>@task.text</td>
+							<td class="text-center">@displayDate(task.date)</td>
+							<td class="text-center">@task.deadline.map(displayDate)</td>
+							<td class="text-center">@if(task.done){<span class="glyphicon glyphicon-ok"></span>}</td>
+						</tr>
+					}
+				} else {
+					<tr><td colspan="50" class="no-items">There is no task</td></tr>
+				}
+			</tbody>
+		</table>
+	}
+}
