@@ -12,7 +12,7 @@ import scala.util.{ Try, Success, Failure }
 import play.api.libs.json._
 
 /*
-* ontroller for 
+* Controller for the API
 */
 trait ApiController extends Controller {
 

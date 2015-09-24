@@ -3,6 +3,7 @@ package api
 import models._
 import java.util.Date
 import play.api.libs.json._
+import play.api.libs.json.Reads.{ DefaultDateReads => _, _ } // Custom validation helpers
 import play.api.libs.functional.syntax._
 
 /*
@@ -21,7 +22,7 @@ object JsonCombinators {
     )
   }
   implicit val userReads: Reads[User] =
-    (__ \ "name").read[String](Reads.minLength[String](1)).map(name => User(0L, null, null, name, false, false))
+    (__ \ "name").read[String](minLength[String](1)).map(name => User(0L, null, null, name, false, false))
 
   implicit val folderWrites = new Writes[Folder] {
     def writes(f: Folder) = Json.obj(
@@ -32,7 +33,7 @@ object JsonCombinators {
     )
   }
   implicit val folderReads: Reads[Folder] =
-    (__ \ "name").read[String](Reads.minLength[String](1)).map(name => Folder(0L, 0L, 0, name))
+    (__ \ "name").read[String](minLength[String](1)).map(name => Folder(0L, 0L, 0, name))
 
   implicit val taskWrites = new Writes[Task] {
     def writes(t: Task) = Json.obj(
@@ -46,7 +47,7 @@ object JsonCombinators {
     )
   }
   implicit val taskReads: Reads[Task] = (
-    (__ \ "text").read[String](Reads.minLength[String](1)) and
+    (__ \ "text").read[String](minLength[String](1)) and
     (__ \ "deadline").readNullable[Date]
   )((text, deadline) => Task(0L, 0L, 0, text, null, deadline, false))
 
