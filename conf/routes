@@ -7,7 +7,7 @@ GET			/test								controllers.Application.test
 
 # AUTHENTICATION
 POST		/signin							controllers.Auth.signIn
-GET			/signout						controllers.Auth.signOut
+POST		/signout						controllers.Auth.signOut
 POST		/signup							controllers.Auth.signUp
 
 # USERNAMES
