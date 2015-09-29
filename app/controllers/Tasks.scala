@@ -19,11 +19,11 @@ class Tasks @Inject() (val messagesApi: MessagesApi) extends api.ApiController {
     }
   }
 
+  // Returns the task information within the content body, but not the Location header.
   def insert(folderId: Long) = SecuredApiActionWithBody { implicit request =>
     readFromRequest[Task] { task =>
       Task.insert(folderId, task.text, new Date(), task.deadline).flatMap {
-        case (id, newTask) =>
-          ok(newTask)
+        case (id, newTask) => created(newTask)
       }
     }
   }

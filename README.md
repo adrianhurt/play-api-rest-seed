@@ -86,7 +86,9 @@ It extends from `ApiResult` and it represents a successful response for the requ
 * `ok(json: JsValue, headers: (String, String)*)`
 * `ok[A](json: JsValue, page: Page[A], headers: (String, String)*)`
 * `created(json: JsValue, headers: (String, String)*)`
+* `created(headers: (String, String)*)`
 * `accepted(json: JsValue, headers: (String, String)*)`
+* `accepted(headers: (String, String)*)`
 * `noContent(headers: (String, String)*)`
 
 ### ApiError
@@ -129,8 +131,10 @@ There are a set of useful methods to create `ApiResults` from JSON objects:
 * `page[A](futP: Future[Page[A]], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]`
 * `created[A](obj: A, headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]`
 * `created[A](futObj: Future[A], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]`
+* `created(headers: (String, String)*): Future[ApiResult]`
 * `accepted[A](obj: A, headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]`
 * `accepted[A](futObj: Future[A], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]`
+* `accepted(headers: (String, String)*): Future[ApiResult]`
 * `noContent(headers: (String, String)*): Future[ApiResult]`
 
 ## Pagination
@@ -208,11 +212,14 @@ To insert new items, there is another method in `ApiController` that reads a wri
     def insert(folderId: Long) = SecuredApiActionWithBody { implicit request =>
       readFromRequest[Task] { task =>
         Task.insert(folderId, task.text, new Date(), task.deadline).flatMap {
-          case (id, newTask) =>
-            ok(newTask)
+          case (id, newTask) => created(newTask)
         }
       }
     }
+
+It would return the new created task within the body response. But if you would like to return an empty body you may want to add a `Location` header with the created URI:
+
+    created(Api.locationHeader(routes.Tasks.info(id)))
 
 To return a single item, update it and delete it:
 

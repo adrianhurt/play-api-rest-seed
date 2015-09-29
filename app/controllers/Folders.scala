@@ -18,10 +18,11 @@ class Folders @Inject() (val messagesApi: MessagesApi) extends api.ApiController
     }
   }
 
+  // Returns the Location header, but not the folder information within the content body.
   def insert = SecuredApiActionWithBody { implicit request =>
     readFromRequest[Folder] { folder =>
       Folder.insert(request.userId, folder.name).flatMap {
-        case (id, newFolder) => ok(newFolder)
+        case (id, newFolder) => created(Api.locationHeader(routes.Folders.info(id)))
       }
     }
   }

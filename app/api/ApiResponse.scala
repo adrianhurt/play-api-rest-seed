@@ -29,7 +29,9 @@ object ApiResponse {
     HEADER_PAGE_TOTAL -> page.total.toString
   ))
   def created(json: JsValue, headers: (String, String)*) = apply(STATUS_CREATED, json, headers)
+  def created(headers: (String, String)*) = apply(STATUS_CREATED, JsNull, headers)
   def accepted(json: JsValue, headers: (String, String)*) = apply(STATUS_ACCEPTED, json, headers)
+  def accepted(headers: (String, String)*) = apply(STATUS_ACCEPTED, JsNull, headers)
   def noContent(headers: (String, String)*) = apply(STATUS_NOCONTENT, JsNull, headers)
 
 }

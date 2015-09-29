@@ -165,8 +165,10 @@
 				<li><code>page[A](futP: Future[Page[A]], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]</code></li>
 				<li><code>created[A](obj: A, headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]</code></li>
 				<li><code>created[A](futObj: Future[A], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]</code></li>
+				<li><code>created(headers: (String, String)*): Future[ApiResult]</code></li>
 				<li><code>accepted[A](obj: A, headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]</code></li>
 				<li><code>accepted[A](futObj: Future[A], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]</code></li>
+				<li><code>accepted(headers: (String, String)*): Future[ApiResult]</code></li>
 				<li><code>noContent(headers: (String, String)*): Future[ApiResult]</code></li>
 			</ul>
 		</div>
@@ -259,10 +261,14 @@ GET    /tasks  controllers.Tasks.list(sort: Option[String])</pre></code>
 <pre><code>def insert(folderId: Long) = SecuredApiActionWithBody { implicit request =>
   readFromRequest[Task] { task =>
     Task.insert(folderId, task.text, new Date(), task.deadline).flatMap {
-      case (id, newTask) => ok(newTask)
+      case (id, newTask) => created(newTask)
     }
   }
 }</pre></code>
+			<p>
+				It would return the new created task within the body response. But if you would like to return an empty body you may want to add a <code>Location</code> header with the created URI:
+			</p>
+<pre><code>created(Api.locationHeader(routes.Tasks.info(id)))</code></pre>
 			<p>
 				To return a single item, update it and delete it:
 			</p>
