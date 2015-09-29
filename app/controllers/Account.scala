@@ -13,11 +13,11 @@ import play.api.libs.functional.syntax._
 
 class Account @Inject() (val messagesApi: MessagesApi) extends api.ApiController with I18nSupport {
 
-  def info = SecuredGetAction { implicit request =>
+  def info = SecuredApiAction { implicit request =>
     maybeItem(User.findById(request.userId))
   }
 
-  def update = SecuredPutAction { implicit request =>
+  def update = SecuredApiActionWithBody { implicit request =>
     readFromRequest[User] { user =>
       User.update(request.userId, user.name).flatMap { isOk =>
         if (isOk) noContent() else errorInternal
@@ -30,7 +30,7 @@ class Account @Inject() (val messagesApi: MessagesApi) extends api.ApiController
       (__ \ "new").read[String](Reads.minLength[String](6)) tupled
   )
 
-  def updatePassword = SecuredPutAction { implicit request =>
+  def updatePassword = SecuredApiActionWithBody { implicit request =>
     readFromRequest[Tuple2[String, String]] {
       case (oldPwd, newPwd) =>
         User.findById(request.userId).flatMap {
@@ -43,7 +43,7 @@ class Account @Inject() (val messagesApi: MessagesApi) extends api.ApiController
     }
   }
 
-  def delete = SecuredDeleteAction { implicit request =>
+  def delete = SecuredApiAction { implicit request =>
     ApiToken.delete(request.token).flatMap { _ =>
       User.delete(request.userId).flatMap { _ =>
         noContent()

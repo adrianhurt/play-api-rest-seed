@@ -6,7 +6,7 @@ import play.api.i18n.{ MessagesApi, I18nSupport }
 
 class Application @Inject() (val messagesApi: MessagesApi) extends api.ApiController with I18nSupport {
 
-  def test = GetAction { implicit request =>
+  def test = ApiAction { implicit request =>
     ok("The API is ready")
   }
 

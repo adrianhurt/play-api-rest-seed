@@ -13,7 +13,7 @@ import play.api.i18n.{ MessagesApi, I18nSupport }
 
 class Users @Inject() (val messagesApi: MessagesApi) extends api.ApiController with I18nSupport {
 
-  def usernames = GetAction { implicit request =>
+  def usernames = ApiAction { implicit request =>
     User.list.flatMap { list =>
       ok(list.map(u => Json.obj("id" -> u.id, "name" -> u.name)))
     }

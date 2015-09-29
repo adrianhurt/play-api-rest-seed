@@ -12,13 +12,13 @@ import play.api.i18n.{ MessagesApi, I18nSupport }
 
 class Folders @Inject() (val messagesApi: MessagesApi) extends api.ApiController with I18nSupport {
 
-  def list(sort: Option[String], p: Int, s: Int) = SecuredGetAction { implicit request =>
+  def list(sort: Option[String], p: Int, s: Int) = SecuredApiAction { implicit request =>
     sortedPage(sort, Folder.sortingFields, default = "order") { sortingFields =>
       Folder.page(request.userId, sortingFields, p, s)
     }
   }
 
-  def insert = SecuredPostAction { implicit request =>
+  def insert = SecuredApiActionWithBody { implicit request =>
     readFromRequest[Folder] { folder =>
       Folder.insert(request.userId, folder.name).flatMap {
         case (id, newFolder) => ok(newFolder)
@@ -26,11 +26,11 @@ class Folders @Inject() (val messagesApi: MessagesApi) extends api.ApiController
     }
   }
 
-  def info(id: Long) = SecuredGetAction { implicit request =>
+  def info(id: Long) = SecuredApiAction { implicit request =>
     maybeItem(Folder.findById(id))
   }
 
-  def update(id: Long) = SecuredPutAction { implicit request =>
+  def update(id: Long) = SecuredApiActionWithBody { implicit request =>
     readFromRequest[Folder] { folder =>
       Folder.basicUpdate(id, folder.name).flatMap { isOk =>
         if (isOk) noContent() else errorInternal
@@ -38,13 +38,13 @@ class Folders @Inject() (val messagesApi: MessagesApi) extends api.ApiController
     }
   }
 
-  def updateOrder(id: Long, newOrder: Int) = SecuredPutAction { implicit request =>
+  def updateOrder(id: Long, newOrder: Int) = SecuredApiAction { implicit request =>
     Folder.updateOrder(id, newOrder).flatMap { isOk =>
       if (isOk) noContent() else errorInternal
     }
   }
 
-  def delete(id: Long) = SecuredDeleteAction { implicit request =>
+  def delete(id: Long) = SecuredApiAction { implicit request =>
     Folder.delete(id).flatMap { _ =>
       noContent()
     }

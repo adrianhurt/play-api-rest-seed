@@ -21,7 +21,7 @@ class Auth @Inject() (val messagesApi: MessagesApi) extends api.ApiController wi
       (__ \ "password").read[String] tupled
   )
 
-  def signIn = PostAction { implicit request =>
+  def signIn = ApiActionWithBody { implicit request =>
     readFromRequest[Tuple2[String, String]] {
       case (email, pwd) =>
         User.findByEmail(email).flatMap {
@@ -41,7 +41,7 @@ class Auth @Inject() (val messagesApi: MessagesApi) extends api.ApiController wi
     }
   }
 
-  def signOut = SecuredGetAction { implicit request =>
+  def signOut = SecuredApiAction { implicit request =>
     ApiToken.delete(request.token).flatMap { _ =>
       noContent()
     }
@@ -53,7 +53,7 @@ class Auth @Inject() (val messagesApi: MessagesApi) extends api.ApiController wi
       (__ \ "user").read[User] tupled
   )
 
-  def signUp = PostAction { implicit request =>
+  def signUp = ApiActionWithBody { implicit request =>
     readFromRequest[Tuple3[String, String, User]] {
       case (email, password, user) =>
         User.findByEmail(email).flatMap {

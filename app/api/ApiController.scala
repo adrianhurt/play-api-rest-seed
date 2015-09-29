@@ -25,18 +25,11 @@ trait ApiController extends Controller {
   //////////////////////////////////////////////////////////////////////
   // Custom Actions
 
-  // Simple GET, POST, PUT, PATCH and DELETE Actions
-  def GetAction(action: ApiRequest[Unit] => Future[ApiResult])(implicit m: Messages) = ApiAction(parse.empty)(action)
-  def PostAction(action: ApiRequest[JsValue] => Future[ApiResult])(implicit m: Messages) = ApiAction(parse.json)(action)
-  def PutAction(action: ApiRequest[JsValue] => Future[ApiResult])(implicit m: Messages) = ApiAction(parse.json)(action)
-  def PatchAction(action: ApiRequest[JsValue] => Future[ApiResult])(implicit m: Messages) = ApiAction(parse.json)(action)
-  def DeleteAction(action: ApiRequest[Unit] => Future[ApiResult])(implicit m: Messages) = ApiAction(parse.empty)(action)
-  // Secured GET, POST, PUT, PATCH and DELETE Actions that require authentication
-  def SecuredGetAction(action: SecuredApiRequest[Unit] => Future[ApiResult])(implicit m: Messages) = SecuredApiAction(parse.empty)(action)
-  def SecuredPostAction(action: SecuredApiRequest[JsValue] => Future[ApiResult])(implicit m: Messages) = SecuredApiAction(parse.json)(action)
-  def SecuredPutAction(action: SecuredApiRequest[JsValue] => Future[ApiResult])(implicit m: Messages) = SecuredApiAction(parse.json)(action)
-  def SecuredPatchAction(action: SecuredApiRequest[JsValue] => Future[ApiResult])(implicit m: Messages) = SecuredApiAction(parse.json)(action)
-  def SecuredDeleteAction(action: SecuredApiRequest[Unit] => Future[ApiResult])(implicit m: Messages) = SecuredApiAction(parse.empty)(action)
+  def ApiAction(action: ApiRequest[Unit] => Future[ApiResult])(implicit m: Messages) = ApiActionWithParser(parse.empty)(action)
+  def ApiActionWithBody(action: ApiRequest[JsValue] => Future[ApiResult])(implicit m: Messages) = ApiActionWithParser(parse.json)(action)
+
+  def SecuredApiAction(action: SecuredApiRequest[Unit] => Future[ApiResult])(implicit m: Messages) = SecuredApiActionWithParser(parse.empty)(action)
+  def SecuredApiActionWithBody(action: SecuredApiRequest[JsValue] => Future[ApiResult])(implicit m: Messages) = SecuredApiActionWithParser(parse.json)(action)
 
   // Creates an Action checking that the Request has all the common necessary headers with their correct values (X-Api-Key, Date)
   private def ApiActionCommon[A](parser: BodyParser[A])(action: (ApiRequest[A], String, DateTime) => Future[ApiResult])(implicit m: Messages) = Action.async(parser) { request =>
@@ -55,7 +48,7 @@ trait ApiController extends Controller {
     }
   }
   // Basic Api Action
-  private def ApiAction[A](parser: BodyParser[A])(action: ApiRequest[A] => Future[ApiResult])(implicit m: Messages) = ApiActionCommon(parser) { (apiRequest, apiKey, date) =>
+  private def ApiActionWithParser[A](parser: BodyParser[A])(action: ApiRequest[A] => Future[ApiResult])(implicit m: Messages) = ApiActionCommon(parser) { (apiRequest, apiKey, date) =>
     ApiKey.isActive(apiKey).flatMap {
       _ match {
         case None => errorApiKeyUnknown
@@ -65,7 +58,7 @@ trait ApiController extends Controller {
     }
   }
   // Secured Api Action that requires authentication. It checks the Request has the correct X-Auth-Token heaader
-  private def SecuredApiAction[A](parser: BodyParser[A])(action: SecuredApiRequest[A] => Future[ApiResult])(implicit m: Messages) = ApiActionCommon(parser) { (apiRequest, apiKey, date) =>
+  private def SecuredApiActionWithParser[A](parser: BodyParser[A])(action: SecuredApiRequest[A] => Future[ApiResult])(implicit m: Messages) = ApiActionCommon(parser) { (apiRequest, apiKey, date) =>
     apiRequest.tokenOpt match {
       case None => errorTokenNotFound
       case Some(token) => ApiToken.findByTokenAndApiKey(token, apiKey).flatMap {

@@ -13,13 +13,13 @@ import java.util.Date
 
 class Tasks @Inject() (val messagesApi: MessagesApi) extends api.ApiController with I18nSupport {
 
-  def list(folderId: Long, q: Option[String], done: Option[Boolean], sort: Option[String], p: Int, s: Int) = SecuredGetAction { implicit request =>
+  def list(folderId: Long, q: Option[String], done: Option[Boolean], sort: Option[String], p: Int, s: Int) = SecuredApiAction { implicit request =>
     sortedPage(sort, Task.sortingFields, default = "order") { sortingFields =>
       Task.page(folderId, q, done, sortingFields, p, s)
     }
   }
 
-  def insert(folderId: Long) = SecuredPostAction { implicit request =>
+  def insert(folderId: Long) = SecuredApiActionWithBody { implicit request =>
     readFromRequest[Task] { task =>
       Task.insert(folderId, task.text, new Date(), task.deadline).flatMap {
         case (id, newTask) =>
@@ -28,11 +28,11 @@ class Tasks @Inject() (val messagesApi: MessagesApi) extends api.ApiController w
     }
   }
 
-  def info(id: Long) = SecuredGetAction { implicit request =>
+  def info(id: Long) = SecuredApiAction { implicit request =>
     maybeItem(Task.findById(id))
   }
 
-  def update(id: Long) = SecuredPutAction { implicit request =>
+  def update(id: Long) = SecuredApiActionWithBody { implicit request =>
     readFromRequest[Task] { task =>
       Task.basicUpdate(id, task.text, task.deadline).flatMap { isOk =>
         if (isOk) noContent() else errorInternal
@@ -40,25 +40,25 @@ class Tasks @Inject() (val messagesApi: MessagesApi) extends api.ApiController w
     }
   }
 
-  def updateOrder(id: Long, newOrder: Int) = SecuredPutAction { implicit request =>
+  def updateOrder(id: Long, newOrder: Int) = SecuredApiAction { implicit request =>
     Task.updateOrder(id, newOrder).flatMap { isOk =>
       if (isOk) noContent() else errorInternal
     }
   }
 
-  def updateFolder(id: Long, folderId: Long) = SecuredPutAction { implicit request =>
+  def updateFolder(id: Long, folderId: Long) = SecuredApiAction { implicit request =>
     Task.updateFolder(id, folderId).flatMap { isOk =>
       if (isOk) noContent() else errorInternal
     }
   }
 
-  def updateDone(id: Long, done: Boolean) = SecuredPutAction { implicit request =>
+  def updateDone(id: Long, done: Boolean) = SecuredApiAction { implicit request =>
     Task.updateDone(id, done).flatMap { isOk =>
       if (isOk) noContent() else errorInternal
     }
   }
 
-  def delete(id: Long) = SecuredDeleteAction { implicit request =>
+  def delete(id: Long) = SecuredApiAction { implicit request =>
     Task.delete(id).flatMap { _ =>
       noContent()
     }
