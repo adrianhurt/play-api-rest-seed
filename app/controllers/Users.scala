@@ -9,9 +9,9 @@ import play.api.libs.json._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import javax.inject.Inject
-import play.api.i18n.{ MessagesApi, I18nSupport }
+import play.api.i18n.{ MessagesApi }
 
-class Users @Inject() (val messagesApi: MessagesApi) extends api.ApiController with I18nSupport {
+class Users @Inject() (val messagesApi: MessagesApi) extends api.ApiController {
 
   def usernames = ApiAction { implicit request =>
     User.list.flatMap { list =>

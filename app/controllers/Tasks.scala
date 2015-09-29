@@ -8,10 +8,10 @@ import play.api.mvc._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import javax.inject.Inject
-import play.api.i18n.{ MessagesApi, I18nSupport }
+import play.api.i18n.{ MessagesApi }
 import java.util.Date
 
-class Tasks @Inject() (val messagesApi: MessagesApi) extends api.ApiController with I18nSupport {
+class Tasks @Inject() (val messagesApi: MessagesApi) extends api.ApiController {
 
   def list(folderId: Long, q: Option[String], done: Option[Boolean], sort: Option[String], p: Int, s: Int) = SecuredApiAction { implicit request =>
     sortedPage(sort, Task.sortingFields, default = "order") { sortingFields =>

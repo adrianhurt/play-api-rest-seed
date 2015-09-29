@@ -12,9 +12,9 @@ import scala.concurrent.duration._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import javax.inject.Inject
-import play.api.i18n.{ MessagesApi, I18nSupport }
+import play.api.i18n.{ MessagesApi }
 
-class Auth @Inject() (val messagesApi: MessagesApi) extends api.ApiController with I18nSupport {
+class Auth @Inject() (val messagesApi: MessagesApi) extends api.ApiController {
 
   implicit val loginInfoReads: Reads[Tuple2[String, String]] = (
     (__ \ "email").read[String](Reads.email) and

@@ -109,13 +109,13 @@ It's simply a trait that extends from `Controller` and adds a set of utilities t
 
 There are a list of useful actions for each request method:
 
-* `ApiAction(action: ApiRequest[Unit] => Future[ApiResult])(implicit m: Messages)`
-* `ApiActionWithBody(action: ApiRequest[JsValue] => Future[ApiResult])(implicit m: Messages)`
+* `ApiAction(action: ApiRequest[Unit] => Future[ApiResult])`
+* `ApiActionWithBody(action: ApiRequest[JsValue] => Future[ApiResult])`
 
 And their equivalences for secured requests:
 
-* `SecuredApiAction(action: SecuredApiRequest[Unit] => Future[ApiResult])(implicit m: Messages)`
-* `SecuredApiActionWithBody(action: SecuredApiRequest[JsValue] => Future[ApiResult])(implicit m: Messages)`
+* `SecuredApiAction(action: SecuredApiRequest[Unit] => Future[ApiResult])`
+* `SecuredApiActionWithBody(action: SecuredApiRequest[JsValue] => Future[ApiResult])`
 
 #### Creating `ApiResults` from writable JSON objects
 
@@ -123,8 +123,8 @@ There are a set of useful methods to create `ApiResults` from JSON objects:
 
 * `ok[A](obj: A, headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]`
 * `ok[A](futObj: Future[A], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]`
-* `maybeItem[A](opt: Option[A], headers: (String, String)*)(implicit w: Writes[A], m: Messages): Future[ApiResult]`
-* `maybeItem[A](futOpt: Future[Option[A]], headers: (String, String)*)(implicit w: Writes[A], m: Messages): Future[ApiResult]`
+* `maybeItem[A](opt: Option[A], headers: (String, String)*)(implicit w: Writes[A], req: RequestHeader): Future[ApiResult]`
+* `maybeItem[A](futOpt: Future[Option[A]], headers: (String, String)*)(implicit w: Writes[A], req: RequestHeader): Future[ApiResult]`
 * `page[A](p: Page[A], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]`
 * `page[A](futP: Future[Page[A]], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]`
 * `created[A](obj: A, headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]`
@@ -191,7 +191,7 @@ This template has implemented a basic TODO example, so you can check it. But her
 
 Your controllers should extend `ApiController` and `I18nSupport`.
 
-    class Tasks @Inject() (val messagesApi: MessagesApi) extends api.ApiController with I18nSupport { … }
+    class Tasks @Inject() (val messagesApi: MessagesApi) extends api.ApiController { … }
 
 To list the tasks and allow searching, filtering, sorting and pagination:
 

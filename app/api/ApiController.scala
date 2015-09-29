@@ -7,14 +7,16 @@ import org.joda.time.DateTime
 import play.api.mvc._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import play.api.i18n.{ Messages, Lang }
+import play.api.i18n.{ MessagesApi, I18nSupport }
 import scala.util.{ Try, Success, Failure }
 import play.api.libs.json._
 
 /*
 * Controller for the API
 */
-trait ApiController extends Controller {
+trait ApiController extends Controller with I18nSupport {
+
+  val messagesApi: MessagesApi
 
   //////////////////////////////////////////////////////////////////////
   // Implicit transformation utilities
@@ -25,14 +27,14 @@ trait ApiController extends Controller {
   //////////////////////////////////////////////////////////////////////
   // Custom Actions
 
-  def ApiAction(action: ApiRequest[Unit] => Future[ApiResult])(implicit m: Messages) = ApiActionWithParser(parse.empty)(action)
-  def ApiActionWithBody(action: ApiRequest[JsValue] => Future[ApiResult])(implicit m: Messages) = ApiActionWithParser(parse.json)(action)
+  def ApiAction(action: ApiRequest[Unit] => Future[ApiResult]) = ApiActionWithParser(parse.empty)(action)
+  def ApiActionWithBody(action: ApiRequest[JsValue] => Future[ApiResult]) = ApiActionWithParser(parse.json)(action)
 
-  def SecuredApiAction(action: SecuredApiRequest[Unit] => Future[ApiResult])(implicit m: Messages) = SecuredApiActionWithParser(parse.empty)(action)
-  def SecuredApiActionWithBody(action: SecuredApiRequest[JsValue] => Future[ApiResult])(implicit m: Messages) = SecuredApiActionWithParser(parse.json)(action)
+  def SecuredApiAction(action: SecuredApiRequest[Unit] => Future[ApiResult]) = SecuredApiActionWithParser(parse.empty)(action)
+  def SecuredApiActionWithBody(action: SecuredApiRequest[JsValue] => Future[ApiResult]) = SecuredApiActionWithParser(parse.json)(action)
 
   // Creates an Action checking that the Request has all the common necessary headers with their correct values (X-Api-Key, Date)
-  private def ApiActionCommon[A](parser: BodyParser[A])(action: (ApiRequest[A], String, DateTime) => Future[ApiResult])(implicit m: Messages) = Action.async(parser) { request =>
+  private def ApiActionCommon[A](parser: BodyParser[A])(action: (ApiRequest[A], String, DateTime) => Future[ApiResult]) = Action.async(parser) { implicit request =>
     implicit val apiRequest = ApiRequest(request)
     val futureApiResult: Future[ApiResult] = apiRequest.apiKeyOpt match {
       case None => errorApiKeyNotFound
@@ -48,7 +50,7 @@ trait ApiController extends Controller {
     }
   }
   // Basic Api Action
-  private def ApiActionWithParser[A](parser: BodyParser[A])(action: ApiRequest[A] => Future[ApiResult])(implicit m: Messages) = ApiActionCommon(parser) { (apiRequest, apiKey, date) =>
+  private def ApiActionWithParser[A](parser: BodyParser[A])(action: ApiRequest[A] => Future[ApiResult]) = ApiActionCommon(parser) { (apiRequest, apiKey, date) =>
     ApiKey.isActive(apiKey).flatMap {
       _ match {
         case None => errorApiKeyUnknown
@@ -58,7 +60,7 @@ trait ApiController extends Controller {
     }
   }
   // Secured Api Action that requires authentication. It checks the Request has the correct X-Auth-Token heaader
-  private def SecuredApiActionWithParser[A](parser: BodyParser[A])(action: SecuredApiRequest[A] => Future[ApiResult])(implicit m: Messages) = ApiActionCommon(parser) { (apiRequest, apiKey, date) =>
+  private def SecuredApiActionWithParser[A](parser: BodyParser[A])(action: SecuredApiRequest[A] => Future[ApiResult]) = ApiActionCommon(parser) { (apiRequest, apiKey, date) =>
     apiRequest.tokenOpt match {
       case None => errorTokenNotFound
       case Some(token) => ApiToken.findByTokenAndApiKey(token, apiKey).flatMap {
@@ -78,12 +80,12 @@ trait ApiController extends Controller {
   def ok[A](obj: A, headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult] = Future.successful(ApiResponse.ok(obj, headers: _*))
   def ok[A](futObj: Future[A], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult] = futObj.map(obj => ApiResponse.ok(obj, headers: _*))
 
-  private def itemOrError[A](opt: Option[A], headers: (String, String)*)(implicit w: Writes[A], m: Messages): ApiResult = opt match {
+  private def itemOrError[A](opt: Option[A], headers: (String, String)*)(implicit w: Writes[A], req: RequestHeader): ApiResult = opt match {
     case Some(i) => ApiResponse.ok(i, headers: _*)
     case None => ApiError.errorItemNotFound
   }
-  def maybeItem[A](opt: Option[A], headers: (String, String)*)(implicit w: Writes[A], m: Messages): Future[ApiResult] = Future.successful(itemOrError(opt, headers: _*))
-  def maybeItem[A](futOpt: Future[Option[A]], headers: (String, String)*)(implicit w: Writes[A], m: Messages): Future[ApiResult] = futOpt.map(opt => itemOrError(opt, headers: _*))
+  def maybeItem[A](opt: Option[A], headers: (String, String)*)(implicit w: Writes[A], req: RequestHeader): Future[ApiResult] = Future.successful(itemOrError(opt, headers: _*))
+  def maybeItem[A](futOpt: Future[Option[A]], headers: (String, String)*)(implicit w: Writes[A], req: RequestHeader): Future[ApiResult] = futOpt.map(opt => itemOrError(opt, headers: _*))
 
   def page[A](p: Page[A], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult] = Future.successful(ApiResponse.ok(p.items, p, headers: _*))
   def page[A](futP: Future[Page[A]], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult] = futP.map(p => ApiResponse.ok(p.items, p, headers: _*))
@@ -93,7 +95,7 @@ trait ApiController extends Controller {
     allowedFields: Seq[String],
     default: String,
     name: String = "sort",
-    headers: Seq[(String, String)] = Seq())(p: Seq[(String, Boolean)] => Future[Page[A]])(implicit w: Writes[A], m: Messages): Future[ApiResult] = {
+    headers: Seq[(String, String)] = Seq())(p: Seq[(String, Boolean)] => Future[Page[A]])(implicit w: Writes[A], req: RequestHeader): Future[ApiResult] = {
     processSortByParam(sortBy, allowedFields, default).fold(
       error => error,
       sortFields => page(p(sortFields), headers: _*)
@@ -112,7 +114,7 @@ trait ApiController extends Controller {
   // More auxiliar methods
 
   // Reads an object from an ApiRequest[JsValue] handling a possible malformed error
-  def readFromRequest[T](f: T => Future[ApiResult])(implicit request: ApiRequest[JsValue], rds: Reads[T], m: Messages): Future[ApiResult] = {
+  def readFromRequest[T](f: T => Future[ApiResult])(implicit request: ApiRequest[JsValue], rds: Reads[T], req: RequestHeader): Future[ApiResult] = {
     request.body.validate[T].fold(
       errors => errorBodyMalformed(errors),
       readValue => f(readValue)
@@ -132,7 +134,7 @@ trait ApiController extends Controller {
 	*  - default: String with the default input sorting description.
 	*  - name: the name of the param.
 	*/
-  def processSortByParam(sortBy: Option[String], allowedFields: Seq[String], default: String, name: String = "sort")(implicit m: Messages): Either[ApiError, Seq[(String, Boolean)]] = {
+  def processSortByParam(sortBy: Option[String], allowedFields: Seq[String], default: String, name: String = "sort")(implicit req: RequestHeader): Either[ApiError, Seq[(String, Boolean)]] = {
     val signedFieldPattern = """([+-]?)(\w+)""".r
     val fieldsWithOrder = signedFieldPattern.findAllIn(sortBy.getOrElse(default)).toList.map {
       case signedFieldPattern("-", field) => (field, DESC)

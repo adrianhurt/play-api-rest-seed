@@ -159,8 +159,8 @@
 			<ul>
 				<li><code>ok[A](obj: A, headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]</code></li>
 				<li><code>ok[A](futObj: Future[A], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]</code></li>
-				<li><code>maybeItem[A](opt: Option[A], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]</code></li>
-				<li><code>maybeItem[A](futOpt: Future[Option[A]], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]</code></li>
+				<li><code>maybeItem[A](opt: Option[A], headers: (String, String)*)(implicit w: Writes[A], req: RequestHeader): Future[ApiResult]</code></li>
+				<li><code>maybeItem[A](futOpt: Future[Option[A]], headers: (String, String)*)(implicit w: Writes[A], req: RequestHeader): Future[ApiResult]</code></li>
 				<li><code>page[A](p: Page[A], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]</code></li>
 				<li><code>page[A](futP: Future[Page[A]], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]</code></li>
 				<li><code>created[A](obj: A, headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]</code></li>
@@ -241,7 +241,7 @@ GET    /tasks  controllers.Tasks.list(sort: Option[String])</pre></code>
 			<p>
 				Your controllers should extend <a href="#code/app/api/ApiController.scala" class="shortcut"><code>ApiController</code></a> and <code>I18nSupport</code>.
 			</p>
-<pre><code>class Tasks @Inject() (val messagesApi: MessagesApi) extends api.ApiController with I18nSupport { … }</pre></code>
+<pre><code>class Tasks @Inject() (val messagesApi: MessagesApi) extends api.ApiController { … }</pre></code>
 			<p>
 				To list the tasks and allow searching, filtering, sorting and pagination:
 			</p>

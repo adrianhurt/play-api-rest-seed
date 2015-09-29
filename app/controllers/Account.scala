@@ -7,11 +7,11 @@ import play.api.mvc._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import javax.inject.Inject
-import play.api.i18n.{ MessagesApi, I18nSupport }
+import play.api.i18n.{ MessagesApi }
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 
-class Account @Inject() (val messagesApi: MessagesApi) extends api.ApiController with I18nSupport {
+class Account @Inject() (val messagesApi: MessagesApi) extends api.ApiController {
 
   def info = SecuredApiAction { implicit request =>
     maybeItem(User.findById(request.userId))
