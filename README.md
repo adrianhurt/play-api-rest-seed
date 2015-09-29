@@ -109,19 +109,13 @@ It's simply a trait that extends from `Controller` and adds a set of utilities t
 
 There are a list of useful actions for each request method:
 
-* `GetAction(action: ApiRequest[Unit] => Future[ApiResult])(implicit m: Messages)`
-* `PostAction(action: ApiRequest[JsValue] => Future[ApiResult])(implicit m: Messages)`
-* `PutAction(action: ApiRequest[JsValue] => Future[ApiResult])(implicit m: Messages)`
-* `PatchAction(action: ApiRequest[JsValue] => Future[ApiResult])(implicit m: Messages)`
-* `DeleteAction(action: ApiRequest[Unit] => Future[ApiResult])(implicit m: Messages)`
+* `ApiAction(action: ApiRequest[Unit] => Future[ApiResult])(implicit m: Messages)`
+* `ApiActionWithBody(action: ApiRequest[JsValue] => Future[ApiResult])(implicit m: Messages)`
 
 And their equivalences for secured requests:
 
-* `SecuredGetAction(action: SecuredApiRequest[Unit] => Future[ApiResult])(implicit m: Messages)`
-* `SecuredPostAction(action: SecuredApiRequest[JsValue] => Future[ApiResult])(implicit m: Messages)`
-* `SecuredPutAction(action: SecuredApiRequest[JsValue] => Future[ApiResult])(implicit m: Messages)`
-* `SecuredPatchAction(action: SecuredApiRequest[JsValue] => Future[ApiResult])(implicit m: Messages)`
-* `SecuredDeleteAction(action: SecuredApiRequest[Unit] => Future[ApiResult])(implicit m: Messages)`
+* `SecuredApiAction(action: SecuredApiRequest[Unit] => Future[ApiResult])(implicit m: Messages)`
+* `SecuredApiActionWithBody(action: SecuredApiRequest[JsValue] => Future[ApiResult])(implicit m: Messages)`
 
 #### Creating `ApiResults` from writable JSON objects
 
@@ -201,7 +195,7 @@ Your controllers should extend `ApiController` and `I18nSupport`.
 
 To list the tasks and allow searching, filtering, sorting and pagination:
 
-    def list(folderId: Long, q: Option[String], done: Option[Boolean], sort: Option[String], p: Int, s: Int) = SecuredGetAction { implicit request =>
+    def list(folderId: Long, q: Option[String], done: Option[Boolean], sort: Option[String], p: Int, s: Int) = SecuredApiAction { implicit request =>
       sortedPage(sort, Task.sortingFields, default = "order") { sortingFields =>
         Task.page(folderId, q, done, sortingFields, p, s)
       }
@@ -211,7 +205,7 @@ Where `Task.page(…)` implements the functionality to return a `Page[Task]` wit
 
 To insert new items, there is another method in `ApiController` that reads a writable object and returns an `ApiError` if needed.
 
-    def insert(folderId: Long) = SecuredPostAction { implicit request =>
+    def insert(folderId: Long) = SecuredApiActionWithBody { implicit request =>
       readFromRequest[Task] { task =>
         Task.insert(folderId, task.text, new Date(), task.deadline).flatMap {
           case (id, newTask) =>
@@ -222,17 +216,17 @@ To insert new items, there is another method in `ApiController` that reads a wri
 
 To return a single item, update it and delete it:
 
-    def info(id: Long) = SecuredGetAction { implicit request =>
+    def info(id: Long) = SecuredApiAction { implicit request =>
       maybeItem(Task.findById(id))
     }
-    def update(id: Long) = SecuredPutAction { implicit request =>
+    def update(id: Long) = SecuredApiActionWithBody { implicit request =>
       readFromRequest[Task] { task =>
         Task.basicUpdate(id, task.text, task.deadline).flatMap { isOk =>
           if (isOk) noContent() else errorInternal
         }
       }
     }
-    def delete(id: Long) = SecuredDeleteAction { implicit request =>
+    def delete(id: Long) = SecuredApiAction { implicit request =>
       Task.delete(id).flatMap { _ =>
         noContent()
       }

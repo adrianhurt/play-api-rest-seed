@@ -142,21 +142,15 @@
 				There are a list of useful actions for each request method:
 			</p>
 			<ul>
-				<li><code>GetAction(action: ApiRequest[Unit] => Future[ApiResult])</code></li>
-				<li><code>PostAction(action: ApiRequest[JsValue] => Future[ApiResult])</code></li>
-				<li><code>PutAction(action: ApiRequest[JsValue] => Future[ApiResult])</code></li>
-				<li><code>PatchAction(action: ApiRequest[JsValue] => Future[ApiResult])</code></li>
-				<li><code>DeleteAction(action: ApiRequest[Unit] => Future[ApiResult])</code></li>
+				<li><code>ApiAction(action: ApiRequest[Unit] => Future[ApiResult])</code></li>
+				<li><code>ApiActionWithBody(action: ApiRequest[JsValue] => Future[ApiResult])</code></li>
 			</ul>
 			<p>
 				And their equivalences for secured requests:
 			</p>
 			<ul>
-				<li><code>SecuredGetAction(action: SecuredApiRequest[Unit] => Future[ApiResult])</code></li>
-				<li><code>SecuredPostAction(action: SecuredApiRequest[JsValue] => Future[ApiResult])</code></li>
-				<li><code>SecuredPutAction(action: SecuredApiRequest[JsValue] => Future[ApiResult])</code></li>
-				<li><code>SecuredPatchAction(action: SecuredApiRequest[JsValue] => Future[ApiResult])</code></li>
-				<li><code>SecuredDeleteAction(action: SecuredApiRequest[Unit] => Future[ApiResult])</code></li>
+				<li><code>SecuredApiAction(action: SecuredApiRequest[Unit] => Future[ApiResult])</code></li>
+				<li><code>SecuredApiActionWithBody(action: SecuredApiRequest[JsValue] => Future[ApiResult])</code></li>
 			</ul>
 			<h3>Creating <code>ApiResults</code> from writable JSON objects</h3>
 			<p>
@@ -251,7 +245,7 @@ GET    /tasks  controllers.Tasks.list(sort: Option[String])</pre></code>
 			<p>
 				To list the tasks and allow searching, filtering, sorting and pagination:
 			</p>
-<pre><code>def list(folderId: Long, q: Option[String], done: Option[Boolean], sort: Option[String], p: Int, s: Int) = SecuredGetAction { implicit request =>
+<pre><code>def list(folderId: Long, q: Option[String], done: Option[Boolean], sort: Option[String], p: Int, s: Int) = SecuredApiAction { implicit request =>
   sortedPage(sort, Task.sortingFields, default = "order") { sortingFields =>
     Task.page(folderId, q, done, sortingFields, p, s)
   }
@@ -262,7 +256,7 @@ GET    /tasks  controllers.Tasks.list(sort: Option[String])</pre></code>
 			<p>
 				To insert new items, there is another method in <a href="#code/app/api/ApiController.scala" class="shortcut"><code>ApiController</code></a> that reads a writable object and returns an <a href="#code/app/api/ApiError.scala" class="shortcut"><code>ApiError</code></a> if needed.
 			</p>
-<pre><code>def insert(folderId: Long) = SecuredPostAction { implicit request =>
+<pre><code>def insert(folderId: Long) = SecuredApiActionWithBody { implicit request =>
   readFromRequest[Task] { task =>
     Task.insert(folderId, task.text, new Date(), task.deadline).flatMap {
       case (id, newTask) => ok(newTask)
@@ -272,17 +266,17 @@ GET    /tasks  controllers.Tasks.list(sort: Option[String])</pre></code>
 			<p>
 				To return a single item, update it and delete it:
 			</p>
-<pre><code>def info(id: Long) = SecuredGetAction { implicit request =>
+<pre><code>def info(id: Long) = SecuredApiAction { implicit request =>
   maybeItem(Task.findById(id))
  }
-def update(id: Long) = SecuredPutAction { implicit request =>
+def update(id: Long) = SecuredApiActionWithBody { implicit request =>
   readFromRequest[Task] { task =>
     Task.basicUpdate(id, task.text, task.deadline).flatMap { isOk =>
       if (isOk) noContent() else errorInternal
     }
   }
 }
-def delete(id: Long) = SecuredDeleteAction { implicit request =>
+def delete(id: Long) = SecuredApiAction { implicit request =>
   Task.delete(id).flatMap { _ =>
     noContent()
   }
