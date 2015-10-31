@@ -44,7 +44,7 @@ Also check my other projects:
 It's simple. In Play you have the classes `Controller`, `Action[A]`, `Request[A]` and `Result`. With this template we have their equivalences:
 
 * `Controller` -> `ApiController`
-* `Action[A]` -> `GetAction`, `PostAction`, `SecuredGetAction`, `SecuredPostAction`, ... and more.
+* `Action[A]` -> `ApiAction`, `ApiActionWithBody`, `SecuredApiAction` and `SecuredApiActionWithBody`.
 * `Request[A]` -> `ApiRequest[A]` and `SecuredApiRequest[A]`
 * `Result` -> `ApiResponse` and `ApiError`, both extending the trait `ApiResult`.
 
