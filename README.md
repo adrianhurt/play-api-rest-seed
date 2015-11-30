@@ -37,7 +37,7 @@ And please, don't forget starring this project if you consider it has been usefu
 Also check my other projects:
 
 * [Play Multidomain Seed [Play 2.4 - Scala]](https://github.com/adrianhurt/play-multidomain-seed)
-* [Play-Bootstrap3 - Play library for Bootstrap 3 [Scala & Java]](http://play-bootstrap3.herokuapp.com)
+* [Play-Bootstrap - Play library for Bootstrap [Scala & Java]](https://adrianhurt.github.io/play-bootstrap)
 
 ## Basic structure
 
