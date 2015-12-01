@@ -39,6 +39,58 @@ Also check my other projects:
 * [Play Multidomain Seed [Play 2.4 - Scala]](https://github.com/adrianhurt/play-multidomain-seed)
 * [Play-Bootstrap - Play library for Bootstrap [Scala & Java]](https://adrianhurt.github.io/play-bootstrap)
 
+## Preview
+
+The main idea is to simplify the code for a common API. Let's see a preview example. Imagine you have a list of "todo" tasks. And only for logged users.
+
+__conf/routes__
+
+    GET         /tasks            controllers.Tasks.list(q: Option[String], done: Option[Boolean], sort: Option[String], page: Int ?= 1, size: Int ?= 10)
+    GET         /tasks/:id        controllers.Tasks.info(id: Long)
+    PUT         /tasks/:id        controllers.Tasks.update(id: Long)
+    DELETE      /tasks/:id        controllers.Tasks.delete(id: Long)
+
+Note you can paginate, filter, search and sort your lists:
+
+    /tasks?size=20&page=3
+    /tasks?q=blah&done=true
+    /tasks?sort=-deadline,-date,order
+
+__app/controllers/Tasks.scala__
+
+    class Tasks @Inject() (val messagesApi: MessagesApi) extends api.ApiController {
+    
+      // Returns a 'page' of tasks with searching, filtering, sorting and pagination
+      def list(q: Option[String], done: Option[Boolean], sort: Option[String], p: Int, s: Int) = SecuredApiAction { implicit request =>
+        sortedPage(sort, Task.sortingFields, default = "order") { sortingFields =>
+          Task.page(q, done, sortingFields, p, s)
+        }
+      }
+    
+      // Returns a tasks or an 'ItemNotFound' error
+      def info(id: Long) = SecuredApiAction { implicit request =>
+        maybeItem(Task.findById(id))
+      }
+    
+      // Updates a task
+      def update(id: Long) = SecuredApiActionWithBody { implicit request =>
+        readFromRequest[Task] { task =>
+          Task.basicUpdate(id, task.text, task.deadline).flatMap { isOk =>
+            if (isOk) noContent() else errorInternal
+          }
+        }
+      }
+    
+      // Deletes a task
+      def delete(id: Long) = SecuredApiAction { implicit request =>
+        Task.delete(id).flatMap { _ =>
+          noContent()
+        }
+      }
+    }
+
+Let's see how to get this.
+
 ## Basic structure
 
 It's simple. In Play you have the classes `Controller`, `Action[A]`, `Request[A]` and `Result`. With this template we have their equivalences:
