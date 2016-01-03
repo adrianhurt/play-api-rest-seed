@@ -58,36 +58,38 @@ Note you can paginate, filter, search and sort your lists:
 
 __app/controllers/Tasks.scala__
 
-    class Tasks @Inject() (val messagesApi: MessagesApi) extends api.ApiController {
-    
-      // Returns a 'page' of tasks with searching, filtering, sorting and pagination
-      def list(q: Option[String], done: Option[Boolean], sort: Option[String], p: Int, s: Int) = SecuredApiAction { implicit request =>
-        sortedPage(sort, Task.sortingFields, default = "order") { sortingFields =>
-          Task.page(q, done, sortingFields, p, s)
-        }
-      }
-    
-      // Returns a tasks or an 'ItemNotFound' error
-      def info(id: Long) = SecuredApiAction { implicit request =>
-        maybeItem(Task.findById(id))
-      }
-    
-      // Updates a task
-      def update(id: Long) = SecuredApiActionWithBody { implicit request =>
-        readFromRequest[Task] { task =>
-          Task.basicUpdate(id, task.text, task.deadline).flatMap { isOk =>
-            if (isOk) noContent() else errorInternal
-          }
-        }
-      }
-    
-      // Deletes a task
-      def delete(id: Long) = SecuredApiAction { implicit request =>
-        Task.delete(id).flatMap { _ =>
-          noContent()
-        }
+```scala
+class Tasks @Inject() (val messagesApi: MessagesApi) extends api.ApiController {
+
+  // Returns a 'page' of tasks with searching, filtering, sorting and pagination
+  def list(q: Option[String], done: Option[Boolean], sort: Option[String], p: Int, s: Int) = SecuredApiAction { implicit request =>
+    sortedPage(sort, Task.sortingFields, default = "order") { sortingFields =>
+      Task.page(q, done, sortingFields, p, s)
+    }
+  }
+
+  // Returns a tasks or an 'ItemNotFound' error
+  def info(id: Long) = SecuredApiAction { implicit request =>
+    maybeItem(Task.findById(id))
+  }
+
+  // Updates a task
+  def update(id: Long) = SecuredApiActionWithBody { implicit request =>
+    readFromRequest[Task] { task =>
+      Task.basicUpdate(id, task.text, task.deadline).flatMap { isOk =>
+        if (isOk) noContent() else errorInternal
       }
     }
+  }
+
+  // Deletes a task
+  def delete(id: Long) = SecuredApiAction { implicit request =>
+    Task.delete(id).flatMap { _ =>
+      noContent()
+    }
+  }
+}
+```
 
 Let's see how to get this.
 
@@ -135,23 +137,29 @@ It's a trait that stores the information required to create a `Result`. It store
 
 It extends from `ApiResult` and it represents a successful response for the request. The available Status Codes are: `STATUS_OK`, `STATUS_CREATED`, `STATUS_ACCEPTED` and `STATUS_NOCONTENT`. And it provides the following factory methods:
 
-* `ok(json: JsValue, headers: (String, String)*)`
-* `ok[A](json: JsValue, page: Page[A], headers: (String, String)*)`
-* `created(json: JsValue, headers: (String, String)*)`
-* `created(headers: (String, String)*)`
-* `accepted(json: JsValue, headers: (String, String)*)`
-* `accepted(headers: (String, String)*)`
-* `noContent(headers: (String, String)*)`
+```scala
+ok(json: JsValue, headers: (String, String)*)
+ok[A](json: JsValue, page: Page[A], headers: (String, String)*)
+created(json: JsValue, headers: (String, String)*)
+created(headers: (String, String)*)
+accepted(json: JsValue, headers: (String, String)*)
+accepted(headers: (String, String)*)
+noContent(headers: (String, String)*)
+```
 
 ### ApiError
 
 It extends from `ApiResult` and it represents an error response for the request. It stores a specific error code, a descriptive message and an optional additional object with more information. The JSON structure is the like the following:
 
-    { code: 400, msg: "Bad Request" }
+```json
+{ "code": 400, "msg": "Bad Request" }
+```
 
 or
 
-    { code: 125, msg: "Malformed body", info: "additional information about the error" }
+```json
+{ "code": 125, "msg": "Malformed body", "info": "additional information about the error" }
+```
 
 The available Status Codes are: `STATUS_BADREQUEST`, `STATUS_UNAUTHORIZED`, `STATUS_FORBIDDEN`, `STATUS_NOTFOUND` and `STATUS_INTERNAL_SERVER`. And it provides a list of predefined code errors and their corresponding factory methods.
 
@@ -163,48 +171,60 @@ It's simply a trait that extends from `Controller` and adds a set of utilities t
 
 There are a list of useful actions for each request method:
 
-* `ApiAction(action: ApiRequest[Unit] => Future[ApiResult])`
-* `ApiActionWithBody(action: ApiRequest[JsValue] => Future[ApiResult])`
+```scala
+ApiAction(action: ApiRequest[Unit] => Future[ApiResult])
+ApiActionWithBody(action: ApiRequest[JsValue] => Future[ApiResult])
+```
 
 And their equivalences for secured requests:
 
-* `SecuredApiAction(action: SecuredApiRequest[Unit] => Future[ApiResult])`
-* `SecuredApiActionWithBody(action: SecuredApiRequest[JsValue] => Future[ApiResult])`
+```scala
+SecuredApiAction(action: SecuredApiRequest[Unit] => Future[ApiResult])
+SecuredApiActionWithBody(action: SecuredApiRequest[JsValue] => Future[ApiResult])
+```
 
 #### Creating `ApiResults` from writable JSON objects
 
 There are a set of useful methods to create `ApiResults` from JSON objects:
 
-* `ok[A](obj: A, headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]`
-* `ok[A](futObj: Future[A], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]`
-* `maybeItem[A](opt: Option[A], headers: (String, String)*)(implicit w: Writes[A], req: RequestHeader): Future[ApiResult]`
-* `maybeItem[A](futOpt: Future[Option[A]], headers: (String, String)*)(implicit w: Writes[A], req: RequestHeader): Future[ApiResult]`
-* `page[A](p: Page[A], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]`
-* `page[A](futP: Future[Page[A]], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]`
-* `created[A](obj: A, headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]`
-* `created[A](futObj: Future[A], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]`
-* `created(headers: (String, String)*): Future[ApiResult]`
-* `accepted[A](obj: A, headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]`
-* `accepted[A](futObj: Future[A], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]`
-* `accepted(headers: (String, String)*): Future[ApiResult]`
-* `noContent(headers: (String, String)*): Future[ApiResult]`
+```scala
+ok[A](obj: A, headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]
+ok[A](futObj: Future[A], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]
+maybeItem[A](opt: Option[A], headers: (String, String)*)(implicit w: Writes[A], req: RequestHeader): Future[ApiResult]
+maybeItem[A](futOpt: Future[Option[A]], headers: (String, String)*)(implicit w: Writes[A], req: RequestHeader): Future[ApiResult]
+page[A](p: Page[A], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]
+page[A](futP: Future[Page[A]], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]
+created[A](obj: A, headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]
+created[A](futObj: Future[A], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]
+created(headers: (String, String)*): Future[ApiResult]
+accepted[A](obj: A, headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]
+accepted[A](futObj: Future[A], headers: (String, String)*)(implicit w: Writes[A]): Future[ApiResult]
+accepted(headers: (String, String)*): Future[ApiResult]
+noContent(headers: (String, String)*): Future[ApiResult]
+```
 
 ## Pagination
 
 There is a simple class to hold the pagination information:
 
-    case class Page[+A](items: Seq[A], page: Int, size: Int, total: Long) {
-      def offset = (page - 1) * size + 1
-    }
+```scala
+case class Page[+A](items: Seq[A], page: Int, size: Int, total: Long) {
+  def offset = (page - 1) * size + 1
+}
+```
 
 Then, we need to create a `Page` class with our list of items and simply call the `page()` method of`ApiController`.
 
-    val itemsPage: Future[Page[Item]] = ...
-    itemsPage.map(page(_))
+```scala
+val itemsPage: Future[Page[Item]] = ...
+itemsPage.map(page(_))
+```
 
 or simply:
 
-    page(itemsPage)
+```scala
+page(itemsPage)
+```
 
 It will add automatically the following headers to the response:
 
@@ -229,7 +249,12 @@ However, sorting is trickier. Let's see this example:
 
 The `sort` parameter have a comma separated list of signed fields, ordered by priority. So for the example, you would like to order by deadline in descendent order, then by date in descendent order, and finally by the task's order within the list in ascendent order. To make it a bit easier, `ApiController` defines the following method
 
-    processSortByParam(sortBy: Option[String], allowedFields: Seq[String], default: String): Either[ApiError, Seq[(String, Boolean)]]
+```scala
+processSortByParam(
+  sortBy: Option[String], 
+  allowedFields: Seq[String], 
+  default: String): Either[ApiError, Seq[(String, Boolean)]]
+```
 
 It takes the `sort` parameter, a list of available allowed fields to sort by, and a default sorting string. Then it returns a list of pairs `(String, Boolean)` with the corresponding field and order (true if it's descendent), or an `ApiError` if any of the field is not allowed.
 
@@ -239,7 +264,9 @@ Then, you can implement the sorting as you want from this `Seq[(field, order)]`,
 
 There are cases where an API client can't access to the HTTP Headers. For that cases you can add the parameter `envelope=true` to the query and it will encapsulate the data information and the headers within a JSON object like that:
 
-    { data: your-json-response, status: status-code, headers: { header1: value1, header2: value2, … } }
+```json
+{ "data": "your-json-response", "status": "status-code", "headers": { "header1": "value1", "header2": "value2" } }
+```
 
 ## How to use it: a simple TODO list example
 
@@ -251,45 +278,54 @@ Your controllers should extend `ApiController` and `I18nSupport`.
 
 To list the tasks and allow searching, filtering, sorting and pagination:
 
-    def list(folderId: Long, q: Option[String], done: Option[Boolean], sort: Option[String], p: Int, s: Int) = SecuredApiAction { implicit request =>
-      sortedPage(sort, Task.sortingFields, default = "order") { sortingFields =>
-        Task.page(folderId, q, done, sortingFields, p, s)
-      }
+```scala
+def list(folderId: Long, q: Option[String], done: Option[Boolean], sort: Option[String], p: Int, s: Int) = 
+  SecuredApiAction { implicit request =>
+    sortedPage(sort, Task.sortingFields, default = "order") { sortingFields =>
+      Task.page(folderId, q, done, sortingFields, p, s)
     }
+  }
+```
 
 Where `Task.page(…)` implements the functionality to return a `Page[Task]` with the corresponding tasks applying this parameters.
 
 To insert new items, there is another method in `ApiController` that reads a writable object and returns an `ApiError` if needed.
 
-    def insert(folderId: Long) = SecuredApiActionWithBody { implicit request =>
-      readFromRequest[Task] { task =>
-        Task.insert(folderId, task.text, new Date(), task.deadline).flatMap {
-          case (id, newTask) => created(newTask)
-        }
-      }
+```scala
+def insert(folderId: Long) = SecuredApiActionWithBody { implicit request =>
+  readFromRequest[Task] { task =>
+    Task.insert(folderId, task.text, new Date(), task.deadline).flatMap {
+      case (id, newTask) => created(newTask)
     }
+  }
+}
+```
 
 It would return the new created task within the body response. But if you would like to return an empty body you may want to add a `Location` header with the created URI:
 
-    created(Api.locationHeader(routes.Tasks.info(id)))
+```scala
+created(Api.locationHeader(routes.Tasks.info(id)))
+```
 
 To return a single item, update it and delete it:
 
-    def info(id: Long) = SecuredApiAction { implicit request =>
-      maybeItem(Task.findById(id))
+```scala
+def info(id: Long) = SecuredApiAction { implicit request =>
+  maybeItem(Task.findById(id))
+}
+
+def update(id: Long) = SecuredApiActionWithBody { implicit request =>
+  readFromRequest[Task] { task =>
+    Task.basicUpdate(id, task.text, task.deadline).flatMap { isOk =>
+      if (isOk) noContent() else errorInternal
     }
-    def update(id: Long) = SecuredApiActionWithBody { implicit request =>
-      readFromRequest[Task] { task =>
-        Task.basicUpdate(id, task.text, task.deadline).flatMap { isOk =>
-          if (isOk) noContent() else errorInternal
-        }
-      }
-    }
-    def delete(id: Long) = SecuredApiAction { implicit request =>
-      Task.delete(id).flatMap { _ =>
-        noContent()
-      }
-    }
+  }
+}
+
+def delete(id: Long) = SecuredApiAction { implicit request =>
+  Task.delete(id).flatMap { _ => noContent() }
+}
+```
 
 The authorization based on the Auth Token is done within the `Auth` controller. It handles the sign in and sign out actions to handle the tokens, and sign up one to register a new user.
 
