@@ -33,6 +33,9 @@ trait ApiController extends Controller with I18nSupport {
   def SecuredApiAction(action: SecuredApiRequest[Unit] => Future[ApiResult]) = SecuredApiActionWithParser(parse.empty)(action)
   def SecuredApiActionWithBody(action: SecuredApiRequest[JsValue] => Future[ApiResult]) = SecuredApiActionWithParser(parse.json)(action)
 
+  def UserAwareApiAction(action: UserAwareApiRequest[Unit] => Future[ApiResult]) = UserAwareApiActionWithParser(parse.empty)(action)
+  def UserAwareApiActionWithBody(action: UserAwareApiRequest[JsValue] => Future[ApiResult]) = UserAwareApiActionWithParser(parse.json)(action)
+
   // Creates an Action checking that the Request has all the common necessary headers with their correct values (X-Api-Key, Date)
   private def ApiActionCommon[A](parser: BodyParser[A])(action: (ApiRequest[A], String, DateTime) => Future[ApiResult]) = Action.async(parser) { implicit request =>
     implicit val apiRequest = ApiRequest(request)
@@ -52,11 +55,9 @@ trait ApiController extends Controller with I18nSupport {
   // Basic Api Action
   private def ApiActionWithParser[A](parser: BodyParser[A])(action: ApiRequest[A] => Future[ApiResult]) = ApiActionCommon(parser) { (apiRequest, apiKey, date) =>
     ApiKey.isActive(apiKey).flatMap {
-      _ match {
-        case None => errorApiKeyUnknown
-        case Some(false) => errorApiKeyDisabled
-        case Some(true) => action(apiRequest)
-      }
+      case None => errorApiKeyUnknown
+      case Some(false) => errorApiKeyDisabled
+      case Some(true) => action(apiRequest)
     }
   }
   // Secured Api Action that requires authentication. It checks the Request has the correct X-Auth-Token heaader
@@ -70,6 +71,24 @@ trait ApiController extends Controller with I18nSupport {
           errorTokenExpired
         }
         case Some(apiToken) => action(SecuredApiRequest(apiRequest.request, apiKey, date, token, apiToken.userId))
+      }
+    }
+  }
+  // User Aware Api Action that requires authentication. It checks the Request has the correct X-Auth-Token heaader
+  private def UserAwareApiActionWithParser[A](parser: BodyParser[A])(action: UserAwareApiRequest[A] => Future[ApiResult]) = ApiActionCommon(parser) { (apiRequest, apiKey, date) =>
+    apiRequest.tokenOpt match {
+      case None => ApiKey.isActive(apiKey).flatMap {
+        case None => errorApiKeyUnknown
+        case Some(false) => errorApiKeyDisabled
+        case Some(true) => action(UserAwareApiRequest(apiRequest.request, apiKey, date, None, None))
+      }
+      case Some(token) => ApiToken.findByTokenAndApiKey(token, apiKey).flatMap {
+        case None => errorTokenUnknown
+        case Some(apiToken) if apiToken.isExpired => {
+          ApiToken.delete(token)
+          errorTokenExpired
+        }
+        case Some(apiToken) => action(UserAwareApiRequest(apiRequest.request, apiKey, date, Some(token), Some(apiToken.userId)))
       }
     }
   }

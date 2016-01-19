@@ -16,7 +16,7 @@ import play.api.mvc.Result
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Try
-import play.api.libs.json.Json
+import play.api.libs.json.{ Json, JsNull }
 
 @RunWith(classOf[JUnitRunner])
 class ApplicationSpec extends PlaySpecification with JsonMatchers {
@@ -110,12 +110,12 @@ class ApplicationSpec extends PlaySpecification with JsonMatchers {
     }
     "sign out" in new WithApplication {
       signIn.map { token =>
-        status(routeSecuredGET(token)("/signout")) must equalTo(NO_CONTENT)
+        status(routeSecuredPOST(token)("/signout", JsNull)) must equalTo(NO_CONTENT)
       }
     }
     "not respond to unauthorized requests once signed out" in new WithApplication {
       signIn.map { token =>
-        routeSecuredGET(token)("/signout")
+        routeSecuredPOST(token)("/signout", JsNull)
         mustBeError(ERROR_TOKEN_NOTFOUND, routeSecuredGET(token)("/account"))
       }
     }

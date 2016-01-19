@@ -122,12 +122,20 @@ Every request should have the following headers:
 * `dateOpt: Option[DateTime]`: with the date taken from the header.
 * `tokenOpt: Option[String]`: with the Auth Token taken from the `X-Auth-Token` header.
 
-`SecuredApiRequest[A]` extends from `ApiRequest[A]` and it's used for secured requests where the user must be signed in. 
+`SecuredApiRequest[A]` extends from `ApiRequest[A]` and it's used for secured requests where the user must be signed in.
 
 * `apiKey: String`
 * `date: DateTime`
 * `token: String`
 * `userId: Long`: with the id of the signed user.
+
+`UserAwareApiRequest[A]` can be used when user authentication is optional. It extends from `ApiRequest[A]` add the following fields: 
+
+* `apiKey: String`
+* `date: DateTime`
+* `isLogged: Boolean`: indicating if the user is logged or not.
+* `token: Option[String]`
+* `userId: Option[Long]`: with the id of the signed user.
 
 ### ApiResult
 
@@ -176,11 +184,14 @@ ApiAction(action: ApiRequest[Unit] => Future[ApiResult])
 ApiActionWithBody(action: ApiRequest[JsValue] => Future[ApiResult])
 ```
 
-And their equivalences for secured requests:
+And their equivalences for secured requests (and optional ones):
 
 ```scala
 SecuredApiAction(action: SecuredApiRequest[Unit] => Future[ApiResult])
 SecuredApiActionWithBody(action: SecuredApiRequest[JsValue] => Future[ApiResult])
+
+UserAwareApiAction(action: UserAwareApiRequest[Unit] => Future[ApiResult])
+UserAwareApiActionWithBody(action: UserAwareApiRequest[JsValue] => Future[ApiResult])
 ```
 
 #### Creating `ApiResults` from writable JSON objects

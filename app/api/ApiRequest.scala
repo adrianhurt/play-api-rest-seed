@@ -47,6 +47,13 @@ object ApiRequest {
 }
 
 /*
+* ApiRequest for user aware requests
+*/
+case class UserAwareApiRequest[A](override val request: Request[A], apiKey: String, date: DateTime, token: Option[String], userId: Option[Long]) extends ApiRequest[A](request) {
+  def isLogged = userId.isDefined
+}
+
+/*
 * ApiRequest for authenticated requests
 */
 case class SecuredApiRequest[A](override val request: Request[A], apiKey: String, date: DateTime, token: String, userId: Long) extends ApiRequest[A](request)
