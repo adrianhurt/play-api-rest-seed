@@ -44,7 +44,10 @@ object ApiLog {
       uri = request.uri,
       requestBody = request.maybeBody,
       responseStatus = status,
-      responseBody = if (json == JsNull) None else Some(Json.prettyPrint(json))
+      responseBody = json match {
+        case JsNull => None
+        case _ => Some(Json.prettyPrint(json))
+      }
     ))
   }
 
