@@ -7,14 +7,14 @@ import play.api.mvc._
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import play.api.Play.current
-import play.api.libs.concurrent.Akka
+import akka.actor.ActorSystem
 import scala.concurrent.duration._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import javax.inject.Inject
-import play.api.i18n.{ MessagesApi }
+import play.api.i18n.MessagesApi
 
-class Auth @Inject() (val messagesApi: MessagesApi) extends api.ApiController {
+class Auth @Inject() (val messagesApi: MessagesApi, system: ActorSystem) extends api.ApiController {
 
   implicit val loginInfoReads: Reads[Tuple2[String, String]] = (
     (__ \ "email").read[String](Reads.email) and
@@ -63,7 +63,7 @@ class Auth @Inject() (val messagesApi: MessagesApi) extends api.ApiController {
 
               // Send confirmation email. You will have to catch the link and confirm the email and activate the user.
               // But meanwhile...
-              Akka.system.scheduler.scheduleOnce(30 seconds) {
+              system.scheduler.scheduleOnce(30 seconds) {
                 User.confirmEmail(id)
               }
 

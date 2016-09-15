@@ -9,7 +9,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 case class ApiKey(
   apiKey: String,
   name: String,
-  active: Boolean)
+  active: Boolean
+)
 object ApiKey {
   import FakeDB.apiKeys
 

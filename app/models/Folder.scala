@@ -10,7 +10,8 @@ case class Folder(
   id: Long,
   userId: Long,
   order: Int,
-  name: String)
+  name: String
+)
 
 object Folder {
   import FakeDB.folders

@@ -114,8 +114,9 @@ trait ApiController extends Controller with I18nSupport {
     allowedFields: Seq[String],
     default: String,
     name: String = "sort",
-    headers: Seq[(String, String)] = Seq())(p: Seq[(String, Boolean)] => Future[Page[A]])(implicit w: Writes[A], req: RequestHeader): Future[ApiResult] = {
-    processSortByParam(sortBy, allowedFields, default).fold(
+    headers: Seq[(String, String)] = Seq()
+  )(p: Seq[(String, Boolean)] => Future[Page[A]])(implicit w: Writes[A], req: RequestHeader): Future[ApiResult] = {
+    processSortByParam(sortBy, allowedFields, default, name).fold(
       error => error,
       sortFields => page(p(sortFields), headers: _*)
     )

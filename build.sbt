@@ -4,22 +4,17 @@ version := "1.0-SNAPSHOT"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
-scalaVersion := "2.11.6"
+scalaVersion := "2.11.7"
 
-scalacOptions ++= Seq("-feature", "-language:implicitConversions", "-language:postfixOps")
-
-libraryDependencies ++= Seq(
-  jdbc,
-  cache,
-  ws,
-  specs2 % Test,
-	"org.specs2" %% "specs2-matcher-extra" % "3.6" % Test
-)
+scalacOptions ++= Seq("-feature", "-deprecation", "-unchecked", "-language:reflectiveCalls", "-language:postfixOps", "-language:implicitConversions")
 
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
 
-// Play provides two styles of routers, one expects its actions to be injected, the
-// other, legacy style, accesses its actions statically.
-routesGenerator := InjectedRoutesGenerator
+doc in Compile <<= target.map(_ / "none")
 
 scalariformSettings
+
+libraryDependencies ++= Seq(
+  specs2 % Test,
+	"org.specs2" %% "specs2-matcher-extra" % "3.8.5" % Test
+)

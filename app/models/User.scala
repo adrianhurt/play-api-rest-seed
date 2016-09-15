@@ -9,7 +9,8 @@ case class User(
   password: String,
   name: String,
   emailConfirmed: Boolean,
-  active: Boolean)
+  active: Boolean
+)
 
 object User {
   import FakeDB.users

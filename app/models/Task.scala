@@ -13,7 +13,8 @@ case class Task(
   text: String,
   date: Date,
   deadline: Option[Date],
-  done: Boolean)
+  done: Boolean
+)
 
 object Task {
   import FakeDB.tasks

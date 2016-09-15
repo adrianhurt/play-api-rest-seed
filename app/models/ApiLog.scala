@@ -21,7 +21,8 @@ case class ApiLog(
     uri: String,
     requestBody: Option[String],
     responseStatus: Int,
-    responseBody: Option[String]) {
+    responseBody: Option[String]
+) {
   def dateStr: String = ApiLog.dtf.print(date)
 }
 object ApiLog {

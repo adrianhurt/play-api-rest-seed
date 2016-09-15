@@ -16,7 +16,8 @@ class ErrorHandler @Inject() (
     config: Configuration,
     sourceMapper: OptionalSourceMapper,
     router: Provider[Router],
-    val messagesApi: MessagesApi) extends DefaultHttpErrorHandler(env, config, sourceMapper, router) with I18nSupport {
+    val messagesApi: MessagesApi
+) extends DefaultHttpErrorHandler(env, config, sourceMapper, router) with I18nSupport {
 
   // 400 - Bad request. Called when a route is found, but it was not possible to bind the request parameters
   override def onBadRequest(request: RequestHeader, message: String) =
